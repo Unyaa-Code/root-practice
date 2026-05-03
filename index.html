@@ -436,7 +436,7 @@
 
   <!-- 二级菜单面板 -->
   <div class="settings-panel" id="settingsPanel">
-    <div class="settings-section-title">🎨 显示设置</div>
+    <div class="settings-section-title"> 显示设置</div>
 
     <div class="setting-item full">
       <label>🔤 字体候补</label>
@@ -471,22 +471,34 @@
     <div class="setting-item">
       <div class="checkbox-label">
         <input type="checkbox" id="wrapByCountCheck">
-        <label for="wrapByCountCheck">元素数大于指定值换行</label>
+        <label for="wrapByCountCheck">元素字数大于指定值换行</label>
       </div>
       <input type="number" id="wrapCountThreshold" min="1" max="100" value="10" placeholder="元素数阈值">
-      <small style="opacity:0.7;">元素数大于此值时自动换行</small>
+      <small style="opacity:0.7;">元素字数大于此值时自动换行</small>
     </div>
 
     <div class="setting-item">
       <div class="checkbox-label">
         <input type="checkbox" id="fontSizeByCountCheck">
-        <label for="fontSizeByCountCheck">元素数大于指定值调整字号</label>
+        <label for="fontSizeByCountCheck">元素字数大于指定值调整字号</label>
       </div>
       <div class="two-col-inputs">
         <input type="number" id="fontSizeCountThreshold" min="1" max="100" value="5" placeholder="元素数阈值">
         <input type="number" id="fontSizeWhenLarge" min="1" max="10" step="0.1" value="3" placeholder="字号">
       </div>
-      <small style="opacity:0.7;">元素数大于阈值时使用指定字号</small>
+      <small style="opacity:0.7;">元素字数大于阈值时使用指定字号</small>
+    </div>
+
+    <div class="settings-section-title">🎯 练习模式</div>
+
+    <div class="setting-item">
+      <div class="checkbox-label">
+        <input type="checkbox" id="orderModeCheck">
+        <label for="orderModeCheck">顺序确认模式</label>
+      </div>
+      <small style="opacity:0.7; white-space:nowrap;">该模式下每个元素只会出现一次</small>
+      <small style="opacity:0.7; white-space:nowrap;">开启后自动显示当前轮次</small>
+
     </div>
 
     <div class="settings-section-title">💾 数据管理</div>
@@ -540,6 +552,7 @@
       <p>一个轻量、开源的网页端输入方案元素（字根、音节等）重复练习工具，专为输入方案学习者设计。</p>
       <p>本工具由《呜喵码》作者 mono、铁圈、冬山秋木 借助 AI 技术共同构建。</p>
       <p>本工具完全开源免费 <a href="https://github.com/Unyaa-Code/root-practice" target="_blank" rel="noopener">GitHub</a><br>如果它为你带来了便利，欢迎移步 <a href="https://github.com/Unyaa-Code/root-practice#赞助" target="_blank" rel="noopener">README 查看赞助方式</a>，每一份支持都是我们持续更新的动力。</p>
+      <p style="opacity:0.5;">v2026-05-04</p>
       </div>
     </div>
   </div>
@@ -582,7 +595,9 @@
       wrapCountThreshold: 10,
       fontSizeByCount: false,
       fontSizeCountThreshold: 5,
-      fontSizeWhenLarge: 3
+      fontSizeWhenLarge: 3,
+      orderMode: false,
+      roundCount: 1
     };
 
     // ============ IndexedDB 核心 ============
@@ -882,6 +897,7 @@
     const fontSizeByCountCheck = document.getElementById('fontSizeByCountCheck');
     const fontSizeCountThreshold = document.getElementById('fontSizeCountThreshold');
     const fontSizeWhenLarge = document.getElementById('fontSizeWhenLarge');
+    const orderModeCheck = document.getElementById('orderModeCheck');
 
     let settings = { ...DEFAULT_SETTINGS };
 
@@ -1013,8 +1029,13 @@
         fontSize = settings.fontSizeWhenLarge;
       }
 
+      const roundInfo = settings.orderMode
+        ? `<div style="font-size:1.1rem; font-weight:700; opacity:0.8; margin-bottom:4px;">🏁 第 ${settings.roundCount} 轮</div>`
+        : '';
+
       practiceArea.innerHTML = `
         <div class="practice-area" id="practiceCard">
+          ${roundInfo}
           <div class="zigen-display" id="zigenChar" style="${displayStyle} font-size: ${fontSize}rem;">${currentCard ? currentCard.name : '—'}</div>
           <div class="hint-area" id="hintDisplay">${hintHtml}</div>
           <div class="answer-preview" id="answerPreview">${answerHtml}</div>
@@ -1064,6 +1085,29 @@
       }
     }
 
+    function renderCompletionView() {
+      document.getElementById('restartBtnWrap').style.display = 'none';
+      practiceArea.innerHTML = `
+        <div class="practice-area" style="display:flex; flex-direction:column; align-items:center; gap:16px; padding:40px 20px;">
+          <div style="font-size:3rem;">🎉</div>
+          <div style="font-size:1.3rem; font-weight:700;">恭喜完成第 ${settings.roundCount} 轮练习！</div>
+          <button id="continuePracticeBtn" style="font-size:1.05rem; padding:12px 32px; border-radius:8px;">继续练习</button>
+        </div>
+      `;
+      document.getElementById('continuePracticeBtn').addEventListener('click', () => {
+        initRecords();
+        syncSortAndCard();
+        progressCount = 0;
+        settings.roundCount++;
+        saveSettings();
+        updateProgressUI();
+        persistAll();
+        renderPracticeArea();
+        const newInput = document.getElementById('answerInput');
+        if (newInput) { newInput.value = ''; newInput.focus(); }
+      });
+    }
+
     // ============ 进度 & 卡片逻辑 ============
     function updateProgressUI() {
       const total = cards.length;
@@ -1109,6 +1153,23 @@
         }
         return;
       }
+
+      if (settings.orderMode) {
+        if (firstRec[0] <= 1) progressCount++;
+        firstRec[0] = 8;
+        syncSortAndCard();
+        updateProgressUI();
+        persistAll();
+        if (records[0][0] === 8) {
+          renderCompletionView();
+        } else {
+          renderPracticeArea();
+          const newInput = document.getElementById('answerInput');
+          if (newInput) { newInput.value = ''; newInput.focus(); }
+        }
+        return;
+      }
+
       firstRec[0] = firstRec[0] + 1;
       if(firstRec[0] === 2) progressCount++;
 
@@ -1154,10 +1215,12 @@
 
     function restartProgress() {
       if(!cards.length) return;
-      if(!confirm('重置进度？')) return;
+      if(!confirm('重置所有进度与轮次？')) return;
       initRecords();
       syncSortAndCard();
       progressCount = 0;
+      settings.roundCount = 1;
+      saveSettings();
       updateProgressUI();
       persistAll();
       renderPracticeArea();
@@ -1244,6 +1307,7 @@
       fontSizeByCountCheck.checked = settings.fontSizeByCount;
       fontSizeCountThreshold.value = settings.fontSizeCountThreshold;
       fontSizeWhenLarge.value = settings.fontSizeWhenLarge;
+      orderModeCheck.checked = settings.orderMode;
       if(settings.night) {
         document.body.classList.add('night');
         nightToggle.textContent = '☀️ 日间';
@@ -1265,6 +1329,7 @@
       settings.fontSizeByCount = fontSizeByCountCheck.checked;
       settings.fontSizeCountThreshold = parseInt(fontSizeCountThreshold.value) || 5;
       settings.fontSizeWhenLarge = parseFloat(fontSizeWhenLarge.value) || 3;
+      settings.orderMode = orderModeCheck.checked;
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
       applyStylesToDynamic();
       gapValue.textContent = settings.gap + 'px';
@@ -1330,6 +1395,10 @@
         saveSettings();
       });
       firstCodeCheck.addEventListener('change', saveSettings);
+      orderModeCheck.addEventListener('change', () => {
+        saveSettings();
+        if (cards.length) renderPracticeArea();
+      });
       toggleSettingsBtn.addEventListener('click', ()=> settingsPanel.classList.toggle('show'));
       document.getElementById('restartBtnTop').addEventListener('click', restartProgress);
 
@@ -1351,19 +1420,10 @@
       document.getElementById('clearCardsBtn').addEventListener('click', clearCards);
       document.getElementById('exportProgressBtn').addEventListener('click', exportProgress);
       document.getElementById('importProgressBtn').addEventListener('click', importProgress);
-      document.getElementById('clearProgressBtn').addEventListener('click', async ()=>{
-        if(!cards.length) return;
-        if(confirm('清空进度？')) {
-          initRecords();
-          syncSortAndCard();
-          updateProgressUI();
-          await persistAll();
-          renderPracticeArea();
-        }
-      });
+      document.getElementById('clearProgressBtn').addEventListener('click', restartProgress);
       document.getElementById('resetSettingsBtn').addEventListener('click', ()=>{
         if(confirm('重置字体/字号/间隙？')) {
-          settings = { ...DEFAULT_SETTINGS, night: settings.night, firstCode: settings.firstCode };
+          settings = { ...DEFAULT_SETTINGS, night: settings.night, firstCode: settings.firstCode, orderMode: settings.orderMode, roundCount: settings.roundCount };
           fontFamilyInput.value = settings.fontFamily;
           zigenFontSize.value = settings.zigenSize;
           answerFontSize.value = settings.answerSize;
@@ -1375,6 +1435,7 @@
           fontSizeByCountCheck.checked = settings.fontSizeByCount;
           fontSizeCountThreshold.value = settings.fontSizeCountThreshold;
           fontSizeWhenLarge.value = settings.fontSizeWhenLarge;
+          orderModeCheck.checked = settings.orderMode;
           saveSettings();
         }
       });
@@ -1400,6 +1461,7 @@
         firstCodeCheck.checked = false;
         wrapByCountCheck.checked = false;
         fontSizeByCountCheck.checked = false;
+        orderModeCheck.checked = false;
         fontFamilyInput.value = settings.fontFamily;
         zigenFontSize.value = settings.zigenSize;
         answerFontSize.value = settings.answerSize;
