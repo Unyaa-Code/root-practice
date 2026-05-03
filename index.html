@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>重复练习器</title>
+  <title>元素重复练习器</title>
   <style>
     * {
       box-sizing: border-box;
@@ -120,12 +120,12 @@
     button:hover { background: #d6d6d6; }
     body.night button:hover { background: #4a5670; }
 
-    /* 练习主区 — 移除背景卡片，避免遮挡字根 */
+    /* 练习主区 — 移除背景卡片，避免遮挡元素 */
     .practice-area {
       text-align: center;
     }
 
-    /* 字根区域 —— 不换行，允许溢出滚动 */
+    /* 元素区域 —— 不换行，允许溢出滚动 */
     .zigen-display {
       font-size: 5.5rem;
       line-height: 1.3;
@@ -410,7 +410,7 @@
 <div class="app-container">
   <!-- 一级页面：文件名、进度条、夜间/首码切换 -->
   <div class="top-bar">
-    <span class="file-name" id="currentFileName">📄 未导入字库</span>
+    <span class="file-name" id="currentFileName">📄 未导入元素数据</span>
     <div class="progress-indicator">
       <span id="progressText">0/0</span>
       <progress id="progressBar" value="0" max="100"></progress>
@@ -444,7 +444,7 @@
     </div>
 
     <div class="setting-item">
-      <label>字根字号 (rem)</label>
+      <label>元素字号 (rem)</label>
       <input type="number" id="zigenFontSize" min="2" max="10" step="0.2" value="5.5">
     </div>
     <div class="setting-item">
@@ -466,27 +466,27 @@
       <span id="gapValue">8px</span>
     </div>
 
-    <div class="settings-section-title">📐 字根数量自适应</div>
+    <div class="settings-section-title">📐 元素数量自适应</div>
 
     <div class="setting-item">
       <div class="checkbox-label">
         <input type="checkbox" id="wrapByCountCheck">
-        <label for="wrapByCountCheck">字根数大于指定值换行</label>
+        <label for="wrapByCountCheck">元素数大于指定值换行</label>
       </div>
-      <input type="number" id="wrapCountThreshold" min="1" max="100" value="10" placeholder="字根数阈值">
-      <small style="opacity:0.7;">字根数大于此值时自动换行</small>
+      <input type="number" id="wrapCountThreshold" min="1" max="100" value="10" placeholder="元素数阈值">
+      <small style="opacity:0.7;">元素数大于此值时自动换行</small>
     </div>
 
     <div class="setting-item">
       <div class="checkbox-label">
         <input type="checkbox" id="fontSizeByCountCheck">
-        <label for="fontSizeByCountCheck">字根数大于指定值调整字号</label>
+        <label for="fontSizeByCountCheck">元素数大于指定值调整字号</label>
       </div>
       <div class="two-col-inputs">
-        <input type="number" id="fontSizeCountThreshold" min="1" max="100" value="5" placeholder="字根数阈值">
+        <input type="number" id="fontSizeCountThreshold" min="1" max="100" value="5" placeholder="元素数阈值">
         <input type="number" id="fontSizeWhenLarge" min="1" max="10" step="0.1" value="3" placeholder="字号">
       </div>
-      <small style="opacity:0.7;">字根数大于阈值时使用指定字号</small>
+      <small style="opacity:0.7;">元素数大于阈值时使用指定字号</small>
     </div>
 
     <div class="settings-section-title">💾 数据管理</div>
@@ -502,9 +502,9 @@
     </div>
 
     <div class="setting-item">
-      <label>🗑️ 清空字库</label>
+      <label>🗑️ 清空元素数据</label>
       <div class="row-buttons">
-        <button id="clearCardsBtn" class="danger-btn">清空字库</button>
+        <button id="clearCardsBtn" class="danger-btn">清空元素数据</button>
       </div>
     </div>
 
@@ -528,7 +528,7 @@
     <div class="setting-item">
       <div class="row-buttons">
         <button id="resetSettingsBtn">重置字体/字号/间隙</button>
-        <button id="clearAllDataBtn" class="danger-btn">清空所有(字库+进度+设置)</button>
+        <button id="clearAllDataBtn" class="danger-btn">清空所有(元素数据+进度+设置)</button>
       </div>
     </div>
 
@@ -537,6 +537,7 @@
     <div class="setting-item full">
       <div id="aboutContent" style="font-size: 0.9rem; line-height: 1.7; opacity: 0.85;">
       <p><strong>关于本工具</strong></p>
+      <p>一个轻量、开源的网页端输入方案元素（字根、音节等）重复练习工具，专为输入方案学习者设计。</p>
       <p>本工具由《呜喵码》作者 mono、铁圈、冬山秋木 借助 AI 技术共同构建。</p>
       <p>本工具完全开源免费 <a href="https://github.com/Unyaa-Code/root-practice" target="_blank" rel="noopener">GitHub</a><br>如果它为你带来了便利，欢迎移步 <a href="https://github.com/Unyaa-Code/root-practice#赞助" target="_blank" rel="noopener">README 查看赞助方式</a>，每一份支持都是我们持续更新的动力。</p>
       </div>
@@ -546,8 +547,12 @@
 
 <div id="welcomeOverlay" class="welcome-overlay" style="display:none;">
   <div class="welcome-box">
-    <h2>👋 欢迎使用字根练习器</h2>
+    <h2>👋 欢迎使用元素重复练习器</h2>
     <div id="welcomeBody"></div>
+    <label style="display:flex; align-items:center; gap:6px; font-size:0.85rem; opacity:0.7; margin-top:12px; cursor:pointer;">
+      <input type="checkbox" id="neverShowAgain">
+      不再提示
+    </label>
     <button class="welcome-close" id="welcomeClose">开始使用</button>
   </div>
 </div>
@@ -850,7 +855,7 @@
     // ============ 全局状态 ============
     let cards = [];
     let records = [];
-    let currentFileName = '未导入字库';
+    let currentFileName = '未导入元素数据';
     let progressCount = 0;
     let currentCard = null;
     let isFirst = true;
@@ -978,9 +983,9 @@
       if (!cards.length) {
         practiceArea.innerHTML = `
           <div class="import-center-area">
-            <div style="font-size:1.5rem; margin-bottom:20px; opacity:0.7;">✨ 导入字根开始练习</div>
-            <button class="import-center-btn" id="centerImportBtn">📁 选择字根文件</button>
-            <small style="opacity:0.7;">格式: 每行一条，Tab 分隔（字根\t编码\t提示）第三列可省略</small>
+            <div style="font-size:1.5rem; margin-bottom:20px; opacity:0.7;">✨ 导入元素开始练习</div>
+            <button class="import-center-btn" id="centerImportBtn">📁 选择元素文件</button>
+            <small style="opacity:0.7;">格式: 每行一条，Tab 分隔（元素\t编码\t提示）第三列可省略</small>
             <input type="file" id="centerFileInput" accept=".txt,.tsv,.csv,.json,application/json,text/plain" style="display:none;">
           </div>
         `;
@@ -1158,7 +1163,7 @@
       renderPracticeArea();
     }
 
-    // ============ 字根文件导入/清空 ============
+    // ============ 元素文件导入/清空 ============
     async function importFile(file) {
       const text = await new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -1192,10 +1197,10 @@
     }
 
     async function clearCards() {
-      if(!confirm('清空字库？')) return;
+      if(!confirm('清空元素数据？')) return;
       cards = [];
       records = [];
-      currentFileName = '未导入字库';
+      currentFileName = '未导入元素数据';
       fileNameSpan.textContent = currentFileName;
       await Promise.all([idbClear('cards'), idbClear('records'), idbClear('filename')]);
       renderPracticeArea();
@@ -1203,7 +1208,7 @@
     }
 
     function exportProgress() {
-      if(!cards.length) { alert('无字库'); return; }
+      if(!cards.length) { alert('无元素数据'); return; }
       document.getElementById('progressImportExport').value = JSON.stringify(records);
     }
     async function importProgress() {
@@ -1302,7 +1307,7 @@
 
         if (loadedCards && loadedCards.length) {
           cards = loadedCards;
-          currentFileName = loadedFname || '未导入字库';
+          currentFileName = loadedFname || '未导入元素数据';
           fileNameSpan.textContent = `📄 ${currentFileName}`;
           if (loadedRecords && loadedRecords.length === cards.length) {
             records = loadedRecords;
@@ -1374,7 +1379,7 @@
         }
       });
       document.getElementById('clearAllDataBtn').addEventListener('click', async ()=>{
-        if(!confirm('⚠️ 清空所有数据(字库+进度+设置+字体)？')) return;
+        if(!confirm('⚠️ 清空所有数据(元素数据+进度+设置+字体)？')) return;
         const toRemove = [];
         for (const f of importedFonts) {
           for (const ff of document.fonts) {
@@ -1387,7 +1392,7 @@
           await Promise.all([idbClear('cards'), idbClear('records'), idbClear('filename'), idbClear('fonts')]);
         } catch(e) {}
         cards = []; records = []; importedFonts = [];
-        currentFileName = '未导入字库';
+        currentFileName = '未导入元素数据';
         fileNameSpan.textContent = currentFileName;
         settings = { ...DEFAULT_SETTINGS };
         document.body.classList.remove('night');
@@ -1413,6 +1418,17 @@
 
     // ============ 启动 ============
     const WELCOME_SEEN_KEY = 'zigen_welcome_seen';
+    const WELCOME_NEVER_KEY = 'zigen_welcome_never';
+    const WELCOME_INTERVAL = 24 * 60 * 60 * 1000;
+
+    function shouldShowWelcome() {
+      if (localStorage.getItem(WELCOME_NEVER_KEY) === '1') return false;
+      const lastSeen = localStorage.getItem(WELCOME_SEEN_KEY);
+      if (!lastSeen) return true;
+      const elapsed = Date.now() - parseInt(lastSeen, 10);
+      return elapsed >= WELCOME_INTERVAL;
+    }
+
     async function init() {
       loadSettings();
       await initDB();
@@ -1423,15 +1439,20 @@
       renderFontList();
       bindEvents();
 
-      if (!localStorage.getItem(WELCOME_SEEN_KEY)) {
+      if (shouldShowWelcome()) {
         const overlay = document.getElementById('welcomeOverlay');
         const body = document.getElementById('welcomeBody');
         const src = document.getElementById('aboutContent');
         body.innerHTML = src.innerHTML;
         overlay.style.display = '';
         document.getElementById('welcomeClose').addEventListener('click', () => {
+          const neverShow = document.getElementById('neverShowAgain');
+          if (neverShow && neverShow.checked) {
+            localStorage.setItem(WELCOME_NEVER_KEY, '1');
+          } else {
+            localStorage.setItem(WELCOME_SEEN_KEY, Date.now().toString());
+          }
           overlay.remove();
-          localStorage.setItem(WELCOME_SEEN_KEY, '1');
         });
       }
     }
