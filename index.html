@@ -1,0 +1,1446 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>重复练习器</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+    }
+    html {
+      overflow-x: hidden;
+    }
+    body {
+      background: #ffffff;
+      color: #1a1e2a;
+      font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+      padding: 16px 12px 24px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      transition: background 0.2s, color 0.2s;
+    }
+    body.night {
+      background: #1a1e2c;
+      color: #e3e3f0;
+    }
+    .app-container {
+      max-width: 780px;
+      margin: 0 auto;
+      width: 100%;
+      flex: 1;
+    }
+
+    /* 头部栏 — 朴素小圆角 */
+    .top-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px 12px;
+      margin-bottom: 18px;
+      background: #f2f2f2;
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1px solid #d4d4d4;
+    }
+    @media (max-width: 500px) {
+      .top-bar {
+        gap: 6px 8px;
+        padding: 6px 10px;
+      }
+      .progress-indicator {
+        font-size: 0.8rem;
+      }
+      progress {
+        width: 80px;
+      }
+      .top-bar .file-name {
+        font-size: 0.82rem;
+      }
+      .zigen-display {
+        font-size: 3.5rem;
+      }
+      .import-center-area {
+        padding: 24px 12px;
+      }
+    }
+    body.night .top-bar {
+      background: #252b3d;
+      border-color: #3e445a;
+    }
+    .file-name {
+      font-weight: 600;
+      margin-right: auto;
+      font-size: 0.95rem;
+      opacity: 0.8;
+      word-break: break-word;
+    }
+    .progress-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #e9e9e9;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+    }
+    body.night .progress-indicator {
+      background: #2f384e;
+    }
+    progress {
+      width: 120px;
+      height: 8px;
+      border-radius: 20px;
+    }
+    progress::-webkit-progress-bar { background: #ccc; border-radius: 20px; }
+    progress::-webkit-progress-value { background: #3a6ea5; border-radius: 20px; }
+    body.night progress::-webkit-progress-bar { background: #3d455b; }
+    body.night progress::-webkit-progress-value { background: #6a9bd2; }
+
+    button, .btn-like {
+      background: #e6e6e6;
+      border: 1px solid #b0b0b0;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      color: #1e1e2a;
+      transition: 0.1s;
+      box-shadow: none;
+    }
+    body.night button {
+      background: #384153;
+      border-color: #5a647c;
+      color: #edeef5;
+    }
+    button:hover { background: #d6d6d6; }
+    body.night button:hover { background: #4a5670; }
+
+    /* 练习主区 — 移除背景卡片，避免遮挡字根 */
+    .practice-area {
+      text-align: center;
+    }
+
+    /* 字根区域 —— 不换行，允许溢出滚动 */
+    .zigen-display {
+      font-size: 5.5rem;
+      line-height: 1.3;
+      word-break: keep-all;
+      white-space: nowrap;
+      overflow: hidden;
+      padding: 5px 0;
+      /* 字体由JavaScript动态设置，使用DEFAULT_SETTINGS.fontFamily */
+      transition: font-size 0.1s;
+    }
+    /* 提示区域 */
+    .hint-area {
+      font-size: 1.2rem;
+      opacity: 0.75;
+      min-height: 2rem;
+    }
+
+    /* 答案预览区域 - 移除圆角背景，保持透明 */
+    .answer-preview {
+      font-size: 1.2rem;
+      min-height: 2rem;
+    }
+
+    .input-wrapper {
+      display: flex;
+      justify-content: center;
+    }
+    #answerInput {
+      width: 200px;
+      max-width: 80%;
+      padding: 12px 18px;
+      font-size: 1.3rem;
+      text-align: center;
+      background: #ffffff;
+      border: 2px solid #c0c0c0;
+      /* 移除大圆角，改为普通输入框 */
+      border-radius: 4px;
+      outline: none;
+      font-family: 'Fira Code', 'JetBrains Mono', monospace;
+      transition: border 0.1s, background 0.2s, font-size 0.1s;
+    }
+    body.night #answerInput {
+      background: #151b26;
+      border-color: #5f6a84;
+      color: #f0f2fa;
+    }
+    #answerInput.input-error {
+      border-color: #c95b5b;
+      background: #fff3f3;
+      animation: shake 0.4s ease-in-out;
+      box-shadow: 0 0 0 3px rgba(201, 91, 91, 0.3);
+    }
+    body.night #answerInput.input-error {
+      border-color: #e06c6c;
+      background: #3a2a2f;
+      box-shadow: 0 0 0 3px rgba(224, 108, 108, 0.4);
+    }
+    
+    /* 错误抖动动画 */
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+      20%, 40%, 60%, 80% { transform: translateX(5px); }
+    }
+    
+    /* 一级页面中央导入按钮 (无卡片时显示) */
+    .import-center-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      border: 2px dashed #ccc;
+      border-radius: 12px;
+      margin: 20px 0;
+    }
+    .import-center-btn {
+      font-size: 1.2rem;
+      padding: 14px 28px;
+      background: #ffffff;
+      border: 1.5px solid #3a6ea5;
+      color: #3a6ea5;
+      border-radius: 30px;
+      cursor: pointer;
+    }
+    body.night .import-center-btn {
+      background: #2a3448;
+      border-color: #6a9bd2;
+      color: #bdd4f0;
+    }
+
+    /* 设置面板 (二级菜单) */
+    .settings-toggle {
+      margin: 10px 0 5px;
+      text-align: right;
+    }
+    .settings-panel {
+      background: #f5f5f5;
+      border-radius: 8px;
+      padding: 18px 20px;
+      margin-top: 12px;
+      border: 1px solid #d0d0d0;
+      display: none;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px 20px;
+    }
+    body.night .settings-panel {
+      background: #20273b;
+      border-color: #434e66;
+    }
+    .settings-panel.show {
+      display: grid;
+    }
+    .setting-item {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 0;
+    }
+    .setting-item.full {
+      grid-column: 1 / -1;
+    }
+    .setting-item label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      opacity: 0.8;
+    }
+    .setting-item input[type="text"],
+    .setting-item input[type="number"],
+    .setting-item textarea {
+      background: #ffffff;
+      border: 1px solid #bcbcbc;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .setting-item input[type="checkbox"] {
+      width: auto;
+      height: auto;
+      padding: 0;
+      margin: 0;
+    }
+    .setting-item input[type="range"] {
+      width: 100%;
+    }
+    .two-col-inputs {
+      display: flex;
+      gap: 8px;
+    }
+    .two-col-inputs input {
+      flex: 1;
+      min-width: 0;
+    }
+    @media (max-width: 500px) {
+      .settings-panel {
+        grid-template-columns: 1fr;
+        padding: 12px 10px;
+        gap: 12px 0;
+      }
+      .two-col-inputs {
+        flex-direction: column;
+      }
+      .row-buttons {
+        flex-direction: column;
+      }
+      .row-buttons button {
+        width: 100%;
+      }
+    }
+    .settings-section-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      opacity: 0.6;
+      padding-top: 6px;
+      border-top: 1px solid #d4d4d4;
+      grid-column: 1 / -1;
+    }
+    body.night .settings-section-title {
+      border-color: #434e66;
+    }
+    body.night .setting-item input {
+      background: #141a26;
+      border-color: #525e78;
+      color: #eee;
+    }
+    
+    /* 复选框标签样式 */
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      opacity: 0.8;
+    }
+    .row-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .danger-btn {
+      background: #f0e2e2;
+      border-color: #b88a8a;
+    }
+    body.night .danger-btn { background: #583e3e; border-color: #a16262; }
+
+    .font-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 10px;
+      background: #ffffff;
+      border: 1px solid #d4d4d4;
+      border-radius: 6px;
+      margin-top: 6px;
+      font-size: 0.85rem;
+    }
+    body.night .font-item { background: #1e2438; border-color: #434e66; }
+    .font-item-name { font-family: monospace; font-weight: 600; }
+    .font-item-format { opacity: 0.5; font-size: 0.75rem; margin-left: 6px; }
+    .font-delete-btn {
+      background: none;
+      border: none;
+      color: #c95b5b;
+      cursor: pointer;
+      font-size: 0.85rem;
+      padding: 2px 8px;
+    }
+    body.night .font-delete-btn { color: #e06c6c; }
+    .font-copy-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 0.8rem;
+      padding: 0 4px;
+      opacity: 0.6;
+      transition: opacity 0.15s;
+    }
+    .font-copy-btn:hover { opacity: 1; }
+
+    hr { opacity: 0.3; margin: 12px 0; }
+    .footer-note {
+      margin-top: 20px;
+      font-size: 0.8rem;
+      text-align: center;
+      opacity: 0.6;
+    }
+    .welcome-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 9999;
+      animation: fadeIn 0.2s ease-out;
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .welcome-box {
+      background: #fff; color: #1a1e2a;
+      border-radius: 12px; padding: 28px 32px;
+      max-width: 480px; width: 90%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    }
+    body.night .welcome-box { background: #20273b; color: #e3e3f0; }
+    .welcome-box h2 { font-size: 1.15rem; margin-bottom: 14px; }
+    .welcome-box p { font-size: 0.9rem; line-height: 1.7; opacity: 0.85; margin-bottom: 6px; }
+    .welcome-box a { color: #3a6ea5; }
+    body.night .welcome-box a { color: #6a9bd2; }
+    .welcome-close {
+      display: block; margin-top: 18px; padding: 10px 24px;
+      border: none; border-radius: 6px; cursor: pointer;
+      background: #3a6ea5; color: #fff; font-size: 0.95rem;
+      width: 100%; font-weight: 600;
+    }
+    body.night .welcome-close { background: #5a7fb5; }
+  </style>
+</head>
+<body>
+<div class="app-container">
+  <!-- 一级页面：文件名、进度条、夜间/首码切换 -->
+  <div class="top-bar">
+    <span class="file-name" id="currentFileName">📄 未导入字库</span>
+    <div class="progress-indicator">
+      <span id="progressText">0/0</span>
+      <progress id="progressBar" value="0" max="100"></progress>
+    </div>
+    <button id="nightModeToggle" title="夜间模式">🌙 夜间</button>
+    <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+      <input type="checkbox" id="firstCodeModeCheck"> 首码模式
+    </label>
+  </div>
+
+  <!-- 练习区：无卡片时显示导入按钮，有卡片时显示练习内容 -->
+  <div id="practiceArea">
+    <!-- 动态内容由js渲染 -->
+  </div>
+
+  <!-- 二级菜单开关 (不遮挡练习区) -->
+  <div id="restartBtnWrap" style="text-align:right; margin-bottom:4px; display:none;">
+    <button id="restartBtnTop">↻ 重置进度</button>
+  </div>
+  <div class="settings-toggle">
+    <button id="toggleSettingsBtn">⚙ 设置与数据</button>
+  </div>
+
+  <!-- 二级菜单面板 -->
+  <div class="settings-panel" id="settingsPanel">
+    <div class="settings-section-title">🎨 显示设置</div>
+
+    <div class="setting-item full">
+      <label>🔤 字体候补</label>
+      <input type="text" id="fontFamilyInput">
+    </div>
+
+    <div class="setting-item">
+      <label>字根字号 (rem)</label>
+      <input type="number" id="zigenFontSize" min="2" max="10" step="0.2" value="5.5">
+    </div>
+    <div class="setting-item">
+      <label>答案字号 (rem)</label>
+      <input type="number" id="answerFontSize" min="0.8" max="3" step="0.1" value="1.2">
+    </div>
+    <div class="setting-item">
+      <label>输入框字号 (rem)</label>
+      <input type="number" id="inputFontSize" min="1" max="4" step="0.1" value="1.3">
+    </div>
+    <div class="setting-item">
+      <label>提示字号 (rem)</label>
+      <input type="number" id="hintFontSize" min="0.8" max="2.5" step="0.1" value="1.2">
+    </div>
+
+    <div class="setting-item">
+      <label>卡片内垂直间隙 (px)</label>
+      <input type="range" id="gapSpacing" min="0" max="40" value="8" step="2">
+      <span id="gapValue">8px</span>
+    </div>
+
+    <div class="settings-section-title">📐 字根数量自适应</div>
+
+    <div class="setting-item">
+      <div class="checkbox-label">
+        <input type="checkbox" id="wrapByCountCheck">
+        <label for="wrapByCountCheck">字根数大于指定值换行</label>
+      </div>
+      <input type="number" id="wrapCountThreshold" min="1" max="100" value="10" placeholder="字根数阈值">
+      <small style="opacity:0.7;">字根数大于此值时自动换行</small>
+    </div>
+
+    <div class="setting-item">
+      <div class="checkbox-label">
+        <input type="checkbox" id="fontSizeByCountCheck">
+        <label for="fontSizeByCountCheck">字根数大于指定值调整字号</label>
+      </div>
+      <div class="two-col-inputs">
+        <input type="number" id="fontSizeCountThreshold" min="1" max="100" value="5" placeholder="字根数阈值">
+        <input type="number" id="fontSizeWhenLarge" min="1" max="10" step="0.1" value="3" placeholder="字号">
+      </div>
+      <small style="opacity:0.7;">字根数大于阈值时使用指定字号</small>
+    </div>
+
+    <div class="settings-section-title">💾 数据管理</div>
+
+    <div class="setting-item">
+      <label>📎 进度导入/导出</label>
+      <div class="row-buttons">
+        <button id="exportProgressBtn">导出进度串</button>
+        <button id="importProgressBtn">导入进度</button>
+        <button id="clearProgressBtn" class="danger-btn">清空进度</button>
+      </div>
+      <textarea id="progressImportExport" placeholder="粘贴进度字符串" rows="2" style="resize:vertical; margin-top:6px; border-radius:8px; padding:8px; width:100%; box-sizing:border-box;"></textarea>
+    </div>
+
+    <div class="setting-item">
+      <label>🗑️ 清空字库</label>
+      <div class="row-buttons">
+        <button id="clearCardsBtn" class="danger-btn">清空字库</button>
+      </div>
+    </div>
+
+    <div class="settings-section-title">🔤 字体管理</div>
+
+    <div class="setting-item">
+      <label>📥 导入自定义字体 (ttf/woff/woff2，最多2个)</label>
+      <div class="row-buttons">
+        <input type="file" id="fontFileInput" accept=".ttf,.otf,.woff,.woff2" style="display:none;">
+        <button id="importFontBtn">📁 导入字体文件</button>
+      </div>
+    </div>
+
+    <div class="setting-item full">
+      <label>已导入字体</label>
+      <div id="fontList">暂无导入字体</div>
+    </div>
+
+    <div class="settings-section-title">🧹 重置</div>
+
+    <div class="setting-item">
+      <div class="row-buttons">
+        <button id="resetSettingsBtn">重置字体/字号/间隙</button>
+        <button id="clearAllDataBtn" class="danger-btn">清空所有(字库+进度+设置)</button>
+      </div>
+    </div>
+
+    <div class="settings-section-title">ℹ️ 关于</div>
+
+    <div class="setting-item full">
+      <div id="aboutContent" style="font-size: 0.9rem; line-height: 1.7; opacity: 0.85;">
+      <p><strong>关于本工具</strong></p>
+      <p>本工具由《呜喵码》作者 mono、铁圈、冬山秋木 借助 AI 技术共同构建。</p>
+      <p>本工具完全开源免费 <a href="https://github.com/Unyaa-Code/root-practice" target="_blank" rel="noopener">GitHub</a><br>如果它为你带来了便利，欢迎移步 <a href="https://github.com/Unyaa-Code/root-practice#赞助" target="_blank" rel="noopener">README 查看赞助方式</a>，每一份支持都是我们持续更新的动力。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="welcomeOverlay" class="welcome-overlay" style="display:none;">
+  <div class="welcome-box">
+    <h2>👋 欢迎使用字根练习器</h2>
+    <div id="welcomeBody"></div>
+    <button class="welcome-close" id="welcomeClose">开始使用</button>
+  </div>
+</div>
+
+<script>
+  (function(){
+    "use strict";
+
+    const MAX_FONTS = 2;
+    const DB_NAME = 'ZigenPracticeDB';
+    const DB_VERSION = 1;
+    const SETTINGS_KEY = 'zigen_memory_settings_v3';
+    const OLD_CARDS_KEY = 'zigen_memory_cards_v2';
+    const OLD_RECORDS_KEY = 'zigen_memory_records_v2';
+    const OLD_FNAME_KEY = 'zigen_memory_filename_v2';
+
+    const DEFAULT_SETTINGS = {
+      fontFamily: "Unyaa-code-PUA, 'Noto Sans SC','Helvetica Neue',Helvetica,'PingFang SC','Hiragino Sans GB','Microsoft YaHei','微软雅黑',Arial,sans-serif",
+      zigenSize: 5.5,
+      answerSize: 1.2,
+      inputSize: 1.3,
+      hintSize: 1.2,
+      gap: 8,
+      night: false,
+      firstCode: false,
+      wrapByCount: false,
+      wrapCountThreshold: 10,
+      fontSizeByCount: false,
+      fontSizeCountThreshold: 5,
+      fontSizeWhenLarge: 3
+    };
+
+    // ============ IndexedDB 核心 ============
+    let db = null;
+
+    function idbRequest(req) {
+      return new Promise((resolve, reject) => {
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function initDB() {
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
+      return new Promise((resolve, reject) => {
+        request.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains('cards')) db.createObjectStore('cards', { keyPath: 'id' });
+          if (!db.objectStoreNames.contains('records')) db.createObjectStore('records', { keyPath: 'id' });
+          if (!db.objectStoreNames.contains('fonts')) db.createObjectStore('fonts', { keyPath: 'id' });
+          if (!db.objectStoreNames.contains('filename')) db.createObjectStore('filename', { keyPath: 'id' });
+        };
+        request.onsuccess = (e) => { db = e.target.result; resolve(db); };
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    async function idbPut(storeName, item) {
+      if (!db) throw new Error('DB not open');
+      const tx = db.transaction(storeName, 'readwrite');
+      const store = tx.objectStore(storeName);
+      await idbRequest(store.put(item));
+      return new Promise(r => { tx.oncomplete = r; tx.onerror = () => r(); });
+    }
+
+    async function idbGet(storeName, id) {
+      if (!db) throw new Error('DB not open');
+      const tx = db.transaction(storeName, 'readonly');
+      const store = tx.objectStore(storeName);
+      const result = await idbRequest(store.get(id));
+      return result || null;
+    }
+
+    async function idbDelete(storeName, id) {
+      if (!db) throw new Error('DB not open');
+      const tx = db.transaction(storeName, 'readwrite');
+      const store = tx.objectStore(storeName);
+      await idbRequest(store.delete(id));
+      return new Promise(r => { tx.oncomplete = r; tx.onerror = () => r(); });
+    }
+
+    async function idbGetAll(storeName) {
+      if (!db) throw new Error('DB not open');
+      const tx = db.transaction(storeName, 'readonly');
+      const store = tx.objectStore(storeName);
+      return idbRequest(store.getAll());
+    }
+
+    async function idbClear(storeName) {
+      if (!db) throw new Error('DB not open');
+      const tx = db.transaction(storeName, 'readwrite');
+      const store = tx.objectStore(storeName);
+      return idbRequest(store.clear());
+    }
+    async function idbCount(storeName) {
+      if (!db) throw new Error('DB not open');
+      const tx = db.transaction(storeName, 'readonly');
+      const store = tx.objectStore(storeName);
+      return idbRequest(store.count());
+    }
+
+    // ---------- 数据层封装 ----------
+    async function saveCards() { await idbPut('cards', { id: 'main', data: cards }); }
+    async function saveRecords() { await idbPut('records', { id: 'main', data: records }); }
+    async function saveFileName() { await idbPut('filename', { id: 'main', name: currentFileName }); }
+
+    async function loadCards() {
+      const item = await idbGet('cards', 'main');
+      return item ? item.data : null;
+    }
+    async function loadRecords() {
+      const item = await idbGet('records', 'main');
+      return item ? item.data : null;
+    }
+    async function loadFileName() {
+      const item = await idbGet('filename', 'main');
+      return item ? item.name : null;
+    }
+
+    // ---------- 字体存储 ----------
+    async function saveFont(id, fontData) {
+      await idbPut('fonts', { id, ...fontData });
+    }
+    async function loadAllFonts() {
+      return idbGetAll('fonts');
+    }
+    async function deleteFontDB(id) {
+      await idbDelete('fonts', id);
+    }
+    async function getFontCount() {
+      return idbCount('fonts');
+    }
+    async function clearAllFonts() {
+      await idbClear('fonts');
+    }
+
+    // ============ 字体名解析 ============
+    function readUint16(dv, off) { return dv.getUint16(off, false); }
+    function readUint32(dv, off) { return dv.getUint32(off, false); }
+
+    function parseTtfFamily(bytes) {
+      try {
+        const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+        const numTables = readUint16(dv, 4);
+        let nameOff = -1;
+        for (let i = 0; i < numTables; i++) {
+          const bo = 12 + i * 16;
+          const tag = String.fromCharCode(dv.getUint8(bo), dv.getUint8(bo+1), dv.getUint8(bo+2), dv.getUint8(bo+3));
+          if (tag === 'name') { nameOff = readUint32(dv, bo+8); break; }
+        }
+        if (nameOff < 0) return null;
+        const fmt = readUint16(dv, nameOff);
+        const count = readUint16(dv, nameOff + 2);
+        const strOff = readUint16(dv, nameOff + 4);
+        const records = [];
+        for (let i = 0; i < count; i++) {
+          const ro = nameOff + 6 + i * 12;
+          const platformID = readUint16(dv, ro);
+          const encodingID = readUint16(dv, ro + 2);
+          const languageID = readUint16(dv, ro + 4);
+          const nameID = readUint16(dv, ro + 6);
+          if (nameID === 1 || nameID === 16 || nameID === 4) {
+            records.push({ nameID, platformID, encodingID, languageID, length: readUint16(dv, ro + 8), offset: readUint16(dv, ro + 10) });
+          }
+        }
+        records.sort((a, b) => {
+          const aid = (a.nameID === 16 ? 0 : a.nameID === 1 ? 1 : 2);
+          const bid = (b.nameID === 16 ? 0 : b.nameID === 1 ? 1 : 2);
+          if (aid !== bid) return aid - bid;
+          const ap = (a.platformID === 3 ? 0 : a.platformID === 0 ? 1 : 2);
+          const bp = (b.platformID === 3 ? 0 : b.platformID === 0 ? 1 : 2);
+          if (ap !== bp) return ap - bp;
+          const al = a.languageID === 2052 ? 0 : a.languageID === 1033 ? 1 : 2;
+          const bl = b.languageID === 2052 ? 0 : b.languageID === 1033 ? 1 : 2;
+          return al - bl;
+        });
+        for (const rec of records) {
+          if (rec.platformID === 1) continue;
+          const start = nameOff + strOff + rec.offset;
+          if (start + rec.length > bytes.byteOffset + bytes.byteLength) continue;
+          let name;
+          if (rec.platformID === 0 && rec.encodingID === 6) {
+            name = new TextDecoder('utf-8').decode(bytes.slice(start, start + rec.length)).replace(/\0/g, '').trim();
+          } else {
+            name = new TextDecoder('utf-16be').decode(bytes.slice(start, start + rec.length)).replace(/\0/g, '').trim();
+          }
+          if (name && name.length > 0) return name;
+        }
+        return null;
+      } catch(e) { console.warn('parseTtfFamily error:', e); return null; }
+    }
+
+    async function parseFontFamily(buffer, format, filename) {
+      const arr = new Uint8Array(buffer);
+      if (format === 'woff') {
+        try {
+          const header = new Uint8Array(buffer, 0, 44);
+          const dv = new DataView(buffer, 0, 44);
+          const signature = String.fromCharCode(header[0], header[1], header[2], header[3]);
+          if (signature !== 'wOFF') throw new Error('not woff');
+          const numTables = dv.getUint16(12, false);
+          let nameTableOff = -1, nameCompLen = -1, nameOrigLen = -1;
+          for (let i = 0; i < numTables; i++) {
+            const bo = 44 + i * 20;
+            const tag = String.fromCharCode(arr[bo], arr[bo+1], arr[bo+2], arr[bo+3]);
+            if (tag === 'name') {
+              nameTableOff = dv.getUint32(bo + 4, false);
+              nameCompLen = dv.getUint32(bo + 8, false);
+              nameOrigLen = dv.getUint32(bo + 12, false);
+              break;
+            }
+          }
+          if (nameTableOff < 0) return await parseTtfFamily(arr) || basename(filename);
+          const compData = new Uint8Array(buffer, nameTableOff, nameCompLen);
+          if (nameCompLen === nameOrigLen) {
+            return parseTtfFamily(compData) || basename(filename);
+          }
+          const ds = new DecompressionStream('deflate-raw');
+          const writer = ds.writable.getWriter();
+          const reader = ds.readable.getReader();
+          writer.write(compData);
+          writer.close();
+          const chunks = [];
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            chunks.push(value);
+          }
+          let totalLen = 0;
+          for (const c of chunks) totalLen += c.length;
+          const merged = new Uint8Array(totalLen);
+          let pos = 0;
+          for (const c of chunks) { merged.set(c, pos); pos += c.length; }
+          return parseTtfFamily(merged) || basename(filename);
+        } catch(e) { return basename(filename); }
+      }
+      if (format === 'woff2') {
+        try {
+          const dc = new DecompressionStream('deflate-raw');
+          const writer = dc.writable.getWriter();
+          const reader = dc.readable.getReader();
+          writer.write(arr.slice(4));
+          writer.close();
+          const chunks = [];
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            chunks.push(value);
+          }
+          let totalLen = 0;
+          for (const c of chunks) totalLen += c.length;
+          const merged = new Uint8Array(totalLen);
+          let p = 0;
+          for (const c of chunks) { merged.set(c, p); p += c.length; }
+          return parseTtfFamily(merged) || basename(filename);
+        } catch(e) { return basename(filename); }
+      }
+      const family = parseTtfFamily(arr);
+      if (family) return family;
+      return basename(filename);
+    }
+
+    function basename(filename) {
+      const m = filename.match(/^(.+?)(\.[^.]+)?$/);
+      return m ? m[1] : filename;
+    }
+
+    // ============ 字体注册到浏览器 ============
+    async function registerFont(fontData) {
+      try {
+        const font = new FontFace(fontData.name, fontData.buffer, {});
+        await font.load();
+        document.fonts.add(font);
+        console.log('FontFace 注册成功:', fontData.name);
+        return true;
+      } catch(e1) {
+        try {
+          const blob = new Blob([fontData.buffer]);
+          const url = URL.createObjectURL(blob);
+          const font2 = new FontFace(fontData.name, 'url(' + url + ')');
+          await font2.load();
+          document.fonts.add(font2);
+          URL.revokeObjectURL(url);
+          console.log('FontFace (Blob URL) 注册成功:', fontData.name);
+          return true;
+        } catch(e2) {
+          console.warn('FontFace 注册失败:', fontData.name, e2.message || e2);
+          return false;
+        }
+      }
+    }
+
+    async function registerAllFonts() {
+      const fonts = await loadAllFonts();
+      for (const f of fonts) {
+        await registerFont(f);
+      }
+    }
+
+    // ============ 全局状态 ============
+    let cards = [];
+    let records = [];
+    let currentFileName = '未导入字库';
+    let progressCount = 0;
+    let currentCard = null;
+    let isFirst = true;
+
+    let importedFonts = [];
+
+    const practiceArea = document.getElementById('practiceArea');
+    const fileNameSpan = document.getElementById('currentFileName');
+    const progressText = document.getElementById('progressText');
+    const progressBar = document.getElementById('progressBar');
+    const nightToggle = document.getElementById('nightModeToggle');
+    const firstCodeCheck = document.getElementById('firstCodeModeCheck');
+    const toggleSettingsBtn = document.getElementById('toggleSettingsBtn');
+    const settingsPanel = document.getElementById('settingsPanel');
+    const fontFamilyInput = document.getElementById('fontFamilyInput');
+    const zigenFontSize = document.getElementById('zigenFontSize');
+    const answerFontSize = document.getElementById('answerFontSize');
+    const inputFontSize = document.getElementById('inputFontSize');
+    const hintFontSize = document.getElementById('hintFontSize');
+    const gapSpacing = document.getElementById('gapSpacing');
+    const gapValue = document.getElementById('gapValue');
+    const wrapByCountCheck = document.getElementById('wrapByCountCheck');
+    const wrapCountThreshold = document.getElementById('wrapCountThreshold');
+    const fontSizeByCountCheck = document.getElementById('fontSizeByCountCheck');
+    const fontSizeCountThreshold = document.getElementById('fontSizeCountThreshold');
+    const fontSizeWhenLarge = document.getElementById('fontSizeWhenLarge');
+
+    let settings = { ...DEFAULT_SETTINGS };
+
+    // ============ 字体列表UI ============
+    function renderFontList() {
+      const container = document.getElementById('fontList');
+      if (!container) return;
+      if (!importedFonts.length) {
+        container.innerHTML = '<span style="opacity:0.5;">暂无导入字体</span>';
+        return;
+      }
+      container.innerHTML = importedFonts.map(f => `
+        <div class="font-item">
+          <span>
+            <button class="font-copy-btn" data-name="${escHtml(f.name)}" title="复制字体名">📋</button>
+            <span class="font-item-name">${escHtml(f.name)}</span><span class="font-item-format">.${f.format}</span>
+          </span>
+          <button class="font-delete-btn" data-fontid="${escHtml(f.id)}">✕ 删除</button>
+        </div>
+      `).join('');
+      container.querySelectorAll('.font-delete-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.dataset.fontid;
+          const target = importedFonts.find(f => f.id === id);
+          if (!target) return;
+          if (!confirm('确定删除"' + target.name + '"？')) return;
+          await deleteFontDB(id);
+          const toRemove = [];
+          for (const ff of document.fonts) {
+            if (ff.family === target.name) toRemove.push(ff);
+          }
+          for (const ff of toRemove) document.fonts.delete(ff);
+          await refreshFontList();
+        });
+      });
+      container.querySelectorAll('.font-copy-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          navigator.clipboard.writeText(btn.dataset.name).then(() => {
+            btn.textContent = '✓';
+            setTimeout(() => { btn.textContent = '📋'; }, 1200);
+          });
+        });
+      });
+    }
+
+    async function refreshFontList() {
+      importedFonts = await loadAllFonts();
+      renderFontList();
+    }
+
+    async function importFontFile(file) {
+      const ext = file.name.split('.').pop().toLowerCase();
+      if (!['ttf', 'otf', 'woff', 'woff2'].includes(ext)) {
+        alert('仅支持 ttf/otf/woff/woff2 格式');
+        return;
+      }
+      const count = await getFontCount();
+      if (count >= MAX_FONTS) {
+        alert('最多只能导入 ' + MAX_FONTS + ' 个字体！请先删除已有字体');
+        return;
+      }
+      const buffer = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsArrayBuffer(file);
+      });
+      const fontName = await parseFontFamily(buffer, ext, file.name);
+      console.log('字体名解析结果:', file.name, '→', fontName);
+      const id = 'font_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+      const fontData = { id, name: fontName, format: ext, buffer };
+
+      const ok = await registerFont(fontData);
+      if (!ok) {
+        alert('⚠️ 无法导入此字体（可能存在兼容性问题）。\n\n建议将该字体安装到系统中，然后在字体候补中直接输入 "' + fontName + '" 即可使用。');
+      } else {
+        await saveFont(id, fontData);
+        alert('✓ 字体 "' + fontName + '" 已成功导入！\n请在字体候补中输入 "' + fontName + '" 即可使用。\n注意：导入字体优先于系统同名字体');
+      }
+      await refreshFontList();
+    }
+
+    function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    // ============ 数据持久化 ============
+    async function persistAll() {
+      if (!db) return;
+      try {
+        if (cards.length) {
+          await Promise.all([saveCards(), saveRecords(), saveFileName()]);
+        } else {
+          await Promise.all([idbClear('cards'), idbClear('records'), idbClear('filename')]);
+        }
+      } catch(e) { console.error('持久化失败:', e); }
+    }
+
+    // ============ 练习区渲染 ============
+    function renderPracticeArea() {
+      if (!cards.length) {
+        practiceArea.innerHTML = `
+          <div class="import-center-area">
+            <div style="font-size:1.5rem; margin-bottom:20px; opacity:0.7;">✨ 导入字根开始练习</div>
+            <button class="import-center-btn" id="centerImportBtn">📁 选择字根文件</button>
+            <small style="opacity:0.7;">格式: 每行一条，Tab 分隔（字根\t编码\t提示）第三列可省略</small>
+            <input type="file" id="centerFileInput" accept=".txt,.tsv,.csv,.json,application/json,text/plain" style="display:none;">
+          </div>
+        `;
+        document.getElementById('centerImportBtn').addEventListener('click', ()=>{
+          document.getElementById('centerFileInput').click();
+        });
+        document.getElementById('centerFileInput').addEventListener('change', (e)=>{
+          const file = e.target.files[0];
+          if(file) importFile(file);
+        });
+        document.getElementById('restartBtnWrap').style.display = 'none';
+        return;
+      }
+      if(!currentCard) syncSortAndCard();
+      const hintHtml = currentCard?.hint ? `💡 ${currentCard.hint}` : '';
+      const answerHtml = isFirst ? `答案：<b style="font-family:monospace;">${currentCard.key}</b>` : '';
+
+      const charCount = currentCard ? currentCard.name.length : 0;
+      let displayStyle = "white-space: nowrap;";
+      if (settings.wrapByCount && charCount > settings.wrapCountThreshold) {
+        displayStyle = "white-space: normal; word-break: break-all;";
+      }
+      let fontSize = settings.zigenSize;
+      if (settings.fontSizeByCount && charCount > settings.fontSizeCountThreshold) {
+        fontSize = settings.fontSizeWhenLarge;
+      }
+
+      practiceArea.innerHTML = `
+        <div class="practice-area" id="practiceCard">
+          <div class="zigen-display" id="zigenChar" style="${displayStyle} font-size: ${fontSize}rem;">${currentCard ? currentCard.name : '—'}</div>
+          <div class="hint-area" id="hintDisplay">${hintHtml}</div>
+          <div class="answer-preview" id="answerPreview">${answerHtml}</div>
+          <div class="input-wrapper">
+            <input type="text" id="answerInput" placeholder="编码" autocomplete="off" autocapitalize="none" spellcheck="false">
+          </div>
+        </div>
+      `;
+
+      const answerInput = document.getElementById('answerInput');
+      applyStylesToDynamic();
+      answerInput.focus();
+
+      answerInput.addEventListener('input', handleInput);
+      document.getElementById('restartBtnWrap').style.display = '';
+      if(!isFirst) answerInput.classList.remove('input-error');
+    }
+
+    function applyStylesToDynamic() {
+      const zigenChar = document.getElementById('zigenChar');
+      const hintEl = document.getElementById('hintDisplay');
+      const answerPreview = document.getElementById('answerPreview');
+      const answerInput = document.getElementById('answerInput');
+      const practiceCard = document.getElementById('practiceCard');
+      if(zigenChar) {
+        const charCount = currentCard ? currentCard.name.length : 0;
+        let fontSize = settings.zigenSize;
+        if (settings.fontSizeByCount && charCount > settings.fontSizeCountThreshold) fontSize = settings.fontSizeWhenLarge;
+        zigenChar.style.fontSize = fontSize + 'rem';
+        zigenChar.style.fontFamily = settings.fontFamily;
+        if (settings.wrapByCount && charCount > settings.wrapCountThreshold) {
+          zigenChar.style.whiteSpace = 'normal';
+          zigenChar.style.wordBreak = 'break-all';
+        } else {
+          zigenChar.style.whiteSpace = 'nowrap';
+          zigenChar.style.wordBreak = '';
+        }
+      }
+      if(hintEl) { hintEl.style.fontSize = settings.hintSize + 'rem'; hintEl.style.fontFamily = settings.fontFamily; }
+      if(answerPreview) { answerPreview.style.fontSize = settings.answerSize + 'rem'; answerPreview.style.fontFamily = settings.fontFamily; }
+      if(answerInput) answerInput.style.fontSize = settings.inputSize + 'rem';
+      if(practiceCard) {
+        practiceCard.style.display = 'flex';
+        practiceCard.style.flexDirection = 'column';
+        practiceCard.style.alignItems = 'center';
+        practiceCard.style.gap = settings.gap + 'px';
+      }
+    }
+
+    // ============ 进度 & 卡片逻辑 ============
+    function updateProgressUI() {
+      const total = cards.length;
+      const mastered = records.filter(r => r[0] > 1).length;
+      progressCount = mastered;
+      progressText.textContent = `${mastered}/${total}`;
+      progressBar.max = total || 1;
+      progressBar.value = mastered;
+    }
+
+    function initRecords() {
+      records = cards.map((_, idx) => [-1, idx]);
+    }
+
+    function syncSortAndCard() {
+      if(!cards.length) return;
+      records.sort((a, b) => {
+        if (a[0] === 8 && b[0] !== 8) return 1;
+        if (b[0] === 8 && a[0] !== 8) return -1;
+        return 0;
+      });
+      const firstRec = records[0];
+      currentCard = cards[firstRec[1]];
+      isFirst = (firstRec[0] === -1);
+    }
+
+    function answer(correct) {
+      if(!cards.length) return;
+      const firstRec = records[0];
+      if(!correct) {
+        if(firstRec[0] > 1) progressCount = Math.max(0, progressCount-1);
+        firstRec[0] = -1;
+        isFirst = true;
+        updateProgressUI();
+        persistAll();
+        renderPracticeArea();
+        const inp = document.getElementById('answerInput');
+        if(inp) {
+          inp.classList.add('input-error');
+          void inp.offsetWidth;
+          inp.style.animation = 'none';
+          setTimeout(() => { inp.style.animation = ''; }, 10);
+        }
+        return;
+      }
+      firstRec[0] = firstRec[0] + 1;
+      if(firstRec[0] === 2) progressCount++;
+
+      const moveSteps = [3, 9, 21, 36, 60, 100];
+      const maxIndex = cards.length - 1;
+      let step = 0;
+      const count = firstRec[0];
+      if(count > moveSteps.length-1) {
+        firstRec[0] = 8;
+        step = maxIndex;
+      } else {
+        step = moveSteps[count];
+        if(step > maxIndex) step = maxIndex;
+      }
+      records.copyWithin(0, 1, step+1);
+      records[step] = firstRec;
+
+      syncSortAndCard();
+      updateProgressUI();
+      persistAll();
+      renderPracticeArea();
+      const newInput = document.getElementById('answerInput');
+      if(newInput) { newInput.value = ''; newInput.focus(); }
+    }
+
+    function handleInput(e) {
+      const val = e.target.value;
+      if(!cards.length) return;
+      if(val.includes(' ')) { answer(false); e.target.value = ''; return; }
+      const targetKey = currentCard.key;
+      const firstCodeMode = firstCodeCheck.checked;
+      if(firstCodeMode) {
+        if(val.length >= 1) {
+          if(val[0] === targetKey[0]) { answer(true); e.target.value = ''; }
+          else { answer(false); e.target.value = ''; }
+        }
+      } else {
+        if(val.length < targetKey.length) return;
+        if(val === targetKey) { answer(true); e.target.value = ''; }
+        else { answer(false); e.target.value = ''; }
+      }
+    }
+
+    function restartProgress() {
+      if(!cards.length) return;
+      if(!confirm('重置进度？')) return;
+      initRecords();
+      syncSortAndCard();
+      progressCount = 0;
+      updateProgressUI();
+      persistAll();
+      renderPracticeArea();
+    }
+
+    // ============ 字根文件导入/清空 ============
+    async function importFile(file) {
+      const text = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsText(file);
+      });
+      try {
+        const lines = text.split(/\r?\n/);
+        const newCards = [];
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (!line) continue;
+          const parts = line.split('\t');
+          if (parts.length < 2 || !parts[0] || !parts[1]) continue;
+          newCards.push({ name: parts[0], key: parts[1], hint: (parts[2] || '').trim() });
+        }
+        if(newCards.length === 0) throw new Error('无有效数据行');
+
+        cards = newCards;
+        currentFileName = file.name.replace(/\.[^.]+$/, '');
+        fileNameSpan.textContent = `📄 ${currentFileName}`;
+        initRecords();
+        syncSortAndCard();
+        updateProgressUI();
+        await persistAll();
+        renderPracticeArea();
+      } catch(err) {
+        alert('文件解析失败: ' + err.message);
+      }
+    }
+
+    async function clearCards() {
+      if(!confirm('清空字库？')) return;
+      cards = [];
+      records = [];
+      currentFileName = '未导入字库';
+      fileNameSpan.textContent = currentFileName;
+      await Promise.all([idbClear('cards'), idbClear('records'), idbClear('filename')]);
+      renderPracticeArea();
+      updateProgressUI();
+    }
+
+    function exportProgress() {
+      if(!cards.length) { alert('无字库'); return; }
+      document.getElementById('progressImportExport').value = JSON.stringify(records);
+    }
+    async function importProgress() {
+      const str = document.getElementById('progressImportExport').value.trim();
+      if(!str) return;
+      try {
+        const imported = JSON.parse(str);
+        if(!Array.isArray(imported) || imported.length !== cards.length) throw new Error('长度不匹配');
+        records = imported;
+        syncSortAndCard();
+        updateProgressUI();
+        await persistAll();
+        renderPracticeArea();
+      } catch(e) { alert('无效进度字符串'); }
+    }
+
+    // ============ 设置 ============
+    function loadSettings() {
+      try {
+        const saved = localStorage.getItem(SETTINGS_KEY);
+        if(saved) { const s = JSON.parse(saved); settings = { ...settings, ...s }; }
+      } catch(e) {}
+      fontFamilyInput.value = settings.fontFamily;
+      zigenFontSize.value = settings.zigenSize;
+      answerFontSize.value = settings.answerSize;
+      inputFontSize.value = settings.inputSize;
+      hintFontSize.value = settings.hintSize;
+      gapSpacing.value = settings.gap;
+      gapValue.textContent = settings.gap + 'px';
+      firstCodeCheck.checked = settings.firstCode;
+      wrapByCountCheck.checked = settings.wrapByCount;
+      wrapCountThreshold.value = settings.wrapCountThreshold;
+      fontSizeByCountCheck.checked = settings.fontSizeByCount;
+      fontSizeCountThreshold.value = settings.fontSizeCountThreshold;
+      fontSizeWhenLarge.value = settings.fontSizeWhenLarge;
+      if(settings.night) {
+        document.body.classList.add('night');
+        nightToggle.textContent = '☀️ 日间';
+      } else {
+        document.body.classList.remove('night');
+        nightToggle.textContent = '🌙 夜间';
+      }
+    }
+    function saveSettings() {
+      settings.fontFamily = fontFamilyInput.value;
+      settings.zigenSize = parseFloat(zigenFontSize.value) || 5.5;
+      settings.answerSize = parseFloat(answerFontSize.value) || 1.2;
+      settings.inputSize = parseFloat(inputFontSize.value) || 1.3;
+      settings.hintSize = parseFloat(hintFontSize.value) || 1.2;
+      settings.gap = parseInt(gapSpacing.value) || 8;
+      settings.firstCode = firstCodeCheck.checked;
+      settings.wrapByCount = wrapByCountCheck.checked;
+      settings.wrapCountThreshold = parseInt(wrapCountThreshold.value) || 10;
+      settings.fontSizeByCount = fontSizeByCountCheck.checked;
+      settings.fontSizeCountThreshold = parseInt(fontSizeCountThreshold.value) || 5;
+      settings.fontSizeWhenLarge = parseFloat(fontSizeWhenLarge.value) || 3;
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+      applyStylesToDynamic();
+      gapValue.textContent = settings.gap + 'px';
+    }
+
+    // ============ 历史数据迁移 ============
+    async function migrateFromLocalStorage() {
+      const oldCards = localStorage.getItem(OLD_CARDS_KEY);
+      const oldRecords = localStorage.getItem(OLD_RECORDS_KEY);
+      const oldFname = localStorage.getItem(OLD_FNAME_KEY);
+      if (!oldCards && !oldRecords) return;
+      try {
+        const existing = await loadCards();
+        if (existing && existing.length) return;
+        const loaded = JSON.parse(oldCards || '[]');
+        if (loaded.length) {
+          cards = loaded;
+          currentFileName = oldFname || '迁移数据';
+          if (oldRecords) {
+            records = JSON.parse(oldRecords);
+            if (records.length !== cards.length) initRecords();
+          } else initRecords();
+          fileNameSpan.textContent = `📄 ${currentFileName}`;
+          syncSortAndCard();
+          updateProgressUI();
+          await persistAll();
+        }
+        localStorage.removeItem(OLD_CARDS_KEY);
+        localStorage.removeItem(OLD_RECORDS_KEY);
+        localStorage.removeItem(OLD_FNAME_KEY);
+      } catch(e) { console.warn('迁移失败:', e); }
+    }
+
+    // ============ 数据加载 ============
+    async function loadStoredData() {
+      try {
+        const loadedCards = await loadCards();
+        const loadedRecords = await loadRecords();
+        const loadedFname = await loadFileName();
+
+        if (loadedCards && loadedCards.length) {
+          cards = loadedCards;
+          currentFileName = loadedFname || '未导入字库';
+          fileNameSpan.textContent = `📄 ${currentFileName}`;
+          if (loadedRecords && loadedRecords.length === cards.length) {
+            records = loadedRecords;
+          } else initRecords();
+          syncSortAndCard();
+          updateProgressUI();
+        } else {
+          updateProgressUI();
+        }
+      } catch(e) { updateProgressUI(); }
+      renderPracticeArea();
+    }
+
+    // ============ 事件绑定 ============
+    function bindEvents() {
+      nightToggle.addEventListener('click', ()=>{
+        settings.night = !settings.night;
+        document.body.classList.toggle('night', settings.night);
+        nightToggle.textContent = settings.night ? '☀️ 日间' : '🌙 夜间';
+        saveSettings();
+      });
+      firstCodeCheck.addEventListener('change', saveSettings);
+      toggleSettingsBtn.addEventListener('click', ()=> settingsPanel.classList.toggle('show'));
+      document.getElementById('restartBtnTop').addEventListener('click', restartProgress);
+
+      [fontFamilyInput, zigenFontSize, answerFontSize, inputFontSize, hintFontSize, gapSpacing,
+       wrapByCountCheck, wrapCountThreshold, fontSizeByCountCheck, fontSizeCountThreshold, fontSizeWhenLarge].forEach(el =>
+        el.addEventListener('input', saveSettings)
+      );
+      gapSpacing.addEventListener('input', ()=> gapValue.textContent = gapSpacing.value+'px');
+
+      document.getElementById('importFontBtn').addEventListener('click', ()=>{
+        document.getElementById('fontFileInput').click();
+      });
+      document.getElementById('fontFileInput').addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (file) await importFontFile(file);
+        e.target.value = '';
+      });
+
+      document.getElementById('clearCardsBtn').addEventListener('click', clearCards);
+      document.getElementById('exportProgressBtn').addEventListener('click', exportProgress);
+      document.getElementById('importProgressBtn').addEventListener('click', importProgress);
+      document.getElementById('clearProgressBtn').addEventListener('click', async ()=>{
+        if(!cards.length) return;
+        if(confirm('清空进度？')) {
+          initRecords();
+          syncSortAndCard();
+          updateProgressUI();
+          await persistAll();
+          renderPracticeArea();
+        }
+      });
+      document.getElementById('resetSettingsBtn').addEventListener('click', ()=>{
+        if(confirm('重置字体/字号/间隙？')) {
+          settings = { ...DEFAULT_SETTINGS, night: settings.night, firstCode: settings.firstCode };
+          fontFamilyInput.value = settings.fontFamily;
+          zigenFontSize.value = settings.zigenSize;
+          answerFontSize.value = settings.answerSize;
+          inputFontSize.value = settings.inputSize;
+          hintFontSize.value = settings.hintSize;
+          gapSpacing.value = settings.gap;
+          wrapByCountCheck.checked = settings.wrapByCount;
+          wrapCountThreshold.value = settings.wrapCountThreshold;
+          fontSizeByCountCheck.checked = settings.fontSizeByCount;
+          fontSizeCountThreshold.value = settings.fontSizeCountThreshold;
+          fontSizeWhenLarge.value = settings.fontSizeWhenLarge;
+          saveSettings();
+        }
+      });
+      document.getElementById('clearAllDataBtn').addEventListener('click', async ()=>{
+        if(!confirm('⚠️ 清空所有数据(字库+进度+设置+字体)？')) return;
+        const toRemove = [];
+        for (const f of importedFonts) {
+          for (const ff of document.fonts) {
+            if (ff.family === f.name) toRemove.push(ff);
+          }
+        }
+        for (const ff of toRemove) document.fonts.delete(ff);
+        localStorage.removeItem(SETTINGS_KEY);
+        try {
+          await Promise.all([idbClear('cards'), idbClear('records'), idbClear('filename'), idbClear('fonts')]);
+        } catch(e) {}
+        cards = []; records = []; importedFonts = [];
+        currentFileName = '未导入字库';
+        fileNameSpan.textContent = currentFileName;
+        settings = { ...DEFAULT_SETTINGS };
+        document.body.classList.remove('night');
+        nightToggle.textContent = '🌙 夜间';
+        firstCodeCheck.checked = false;
+        wrapByCountCheck.checked = false;
+        fontSizeByCountCheck.checked = false;
+        fontFamilyInput.value = settings.fontFamily;
+        zigenFontSize.value = settings.zigenSize;
+        answerFontSize.value = settings.answerSize;
+        inputFontSize.value = settings.inputSize;
+        hintFontSize.value = settings.hintSize;
+        gapSpacing.value = settings.gap;
+        wrapCountThreshold.value = settings.wrapCountThreshold;
+        fontSizeCountThreshold.value = settings.fontSizeCountThreshold;
+        fontSizeWhenLarge.value = settings.fontSizeWhenLarge;
+        saveSettings();
+        renderPracticeArea();
+        updateProgressUI();
+        renderFontList();
+      });
+    }
+
+    // ============ 启动 ============
+    const WELCOME_SEEN_KEY = 'zigen_welcome_seen';
+    async function init() {
+      loadSettings();
+      await initDB();
+      await migrateFromLocalStorage();
+      await loadStoredData();
+      importedFonts = await loadAllFonts();
+      await registerAllFonts();
+      renderFontList();
+      bindEvents();
+
+      if (!localStorage.getItem(WELCOME_SEEN_KEY)) {
+        const overlay = document.getElementById('welcomeOverlay');
+        const body = document.getElementById('welcomeBody');
+        const src = document.getElementById('aboutContent');
+        body.innerHTML = src.innerHTML;
+        overlay.style.display = '';
+        document.getElementById('welcomeClose').addEventListener('click', () => {
+          overlay.remove();
+          localStorage.setItem(WELCOME_SEEN_KEY, '1');
+        });
+      }
+    }
+
+    init().catch(err => {
+      alert('初始化失败: ' + err.message);
+      console.error(err);
+    });
+  })();
+</script>
+</body>
+</html>
