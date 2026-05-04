@@ -460,6 +460,7 @@
     <div class="setting-item full">
       <label>🔤 字体候补</label>
       <input type="text" id="fontFamilyInput">
+      <small style="opacity:0.7;">部分名称需使用英文单引号包裹</small>
     </div>
 
     <div class="setting-item">
@@ -857,20 +858,18 @@
     // ============ 字体注册到浏览器 ============
     async function registerFont(fontData) {
       try {
-        const font = new FontFace(fontData.name, fontData.buffer, {});
+        const blob = new Blob([fontData.buffer]);
+        const url = URL.createObjectURL(blob);
+        const font = new FontFace(fontData.name, 'url(' + url + ')');
         await font.load();
         document.fonts.add(font);
-        console.log('FontFace 注册成功:', fontData.name);
+        URL.revokeObjectURL(url);
         return true;
       } catch(e1) {
         try {
-          const blob = new Blob([fontData.buffer]);
-          const url = URL.createObjectURL(blob);
-          const font2 = new FontFace(fontData.name, 'url(' + url + ')');
-          await font2.load();
-          document.fonts.add(font2);
-          URL.revokeObjectURL(url);
-          console.log('FontFace (Blob URL) 注册成功:', fontData.name);
+          const font = new FontFace(fontData.name, fontData.buffer, {});
+          await font.load();
+          document.fonts.add(font);
           return true;
         } catch(e2) {
           console.warn('FontFace 注册失败:', fontData.name, e2.message || e2);
@@ -1516,9 +1515,9 @@
       loadSettings();
       await initDB();
       await migrateFromLocalStorage();
-      await loadStoredData();
       importedFonts = await loadAllFonts();
       await registerAllFonts();
+      await loadStoredData();
       renderFontList();
       bindEvents();
 
