@@ -60,6 +60,10 @@
       .top-bar .file-name {
         font-size: 0.82rem;
       }
+      #roundCounter {
+        font-size: 0.75rem;
+        padding: 1px 6px;
+      }
       .zigen-display {
         font-size: 3.5rem;
       }
@@ -88,6 +92,18 @@
       font-size: 0.9rem;
     }
     body.night .progress-indicator {
+      background: #2f384e;
+    }
+    #roundCounter {
+      font-size: 0.85rem;
+      font-weight: 600;
+      opacity: 0.7;
+      padding: 2px 8px;
+      background: #e0e8f0;
+      border-radius: 10px;
+      white-space: nowrap;
+    }
+    body.night #roundCounter {
       background: #2f384e;
     }
     progress {
@@ -411,6 +427,7 @@
   <!-- 一级页面：文件名、进度条、夜间/首码切换 -->
   <div class="top-bar">
     <span class="file-name" id="currentFileName">📄 未导入元素数据</span>
+    <span id="roundCounter" style="display:none;">第 1 轮</span>
     <div class="progress-indicator">
       <span id="progressText">0/0</span>
       <progress id="progressBar" value="0" max="100"></progress>
@@ -427,11 +444,13 @@
   </div>
 
   <!-- 二级菜单开关 (不遮挡练习区) -->
-  <div id="restartBtnWrap" style="text-align:right; margin-bottom:4px; display:none;">
-    <button id="restartBtnTop">↻ 重置进度</button>
-  </div>
-  <div class="settings-toggle">
-    <button id="toggleSettingsBtn">⚙ 设置与数据</button>
+  <div style="margin-top:20px;">
+    <div id="restartBtnWrap" style="text-align:right; margin-bottom:4px; display:none;">
+      <button id="restartBtnTop">↻ 重置进度</button>
+    </div>
+    <div class="settings-toggle">
+      <button id="toggleSettingsBtn">⚙ 设置与数据</button>
+    </div>
   </div>
 
   <!-- 二级菜单面板 -->
@@ -879,6 +898,7 @@
 
     const practiceArea = document.getElementById('practiceArea');
     const fileNameSpan = document.getElementById('currentFileName');
+    const roundCounter = document.getElementById('roundCounter');
     const progressText = document.getElementById('progressText');
     const progressBar = document.getElementById('progressBar');
     const nightToggle = document.getElementById('nightModeToggle');
@@ -900,6 +920,11 @@
     const orderModeCheck = document.getElementById('orderModeCheck');
 
     let settings = { ...DEFAULT_SETTINGS };
+
+    function updateRoundCounter() {
+      roundCounter.style.display = settings.orderMode ? '' : 'none';
+      roundCounter.textContent = `第 ${settings.roundCount} 轮`;
+    }
 
     // ============ 字体列表UI ============
     function renderFontList() {
@@ -1029,13 +1054,8 @@
         fontSize = settings.fontSizeWhenLarge;
       }
 
-      const roundInfo = settings.orderMode
-        ? `<div style="font-size:1.1rem; font-weight:700; opacity:0.8; margin-bottom:4px;">🏁 第 ${settings.roundCount} 轮</div>`
-        : '';
-
       practiceArea.innerHTML = `
         <div class="practice-area" id="practiceCard">
-          ${roundInfo}
           <div class="zigen-display" id="zigenChar" style="${displayStyle} font-size: ${fontSize}rem;">${currentCard ? currentCard.name : '—'}</div>
           <div class="hint-area" id="hintDisplay">${hintHtml}</div>
           <div class="answer-preview" id="answerPreview">${answerHtml}</div>
@@ -1315,6 +1335,7 @@
         document.body.classList.remove('night');
         nightToggle.textContent = '🌙 夜间';
       }
+      updateRoundCounter();
     }
     function saveSettings() {
       settings.fontFamily = fontFamilyInput.value;
@@ -1333,6 +1354,7 @@
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
       applyStylesToDynamic();
       gapValue.textContent = settings.gap + 'px';
+      updateRoundCounter();
     }
 
     // ============ 历史数据迁移 ============
@@ -1395,10 +1417,7 @@
         saveSettings();
       });
       firstCodeCheck.addEventListener('change', saveSettings);
-      orderModeCheck.addEventListener('change', () => {
-        saveSettings();
-        if (cards.length) renderPracticeArea();
-      });
+      orderModeCheck.addEventListener('change', saveSettings);
       toggleSettingsBtn.addEventListener('click', ()=> settingsPanel.classList.toggle('show'));
       document.getElementById('restartBtnTop').addEventListener('click', restartProgress);
 
@@ -1440,7 +1459,7 @@
         }
       });
       document.getElementById('clearAllDataBtn').addEventListener('click', async ()=>{
-        if(!confirm('⚠️ 清空所有数据(元素数据+进度+设置+字体)？')) return;
+        if(!confirm('⚠️ 清空所有数据(元素数据+进度+设置+字体)？\n这将还原所有状态，包括弹窗提示。')) return;
         const toRemove = [];
         for (const f of importedFonts) {
           for (const ff of document.fonts) {
@@ -1448,7 +1467,9 @@
           }
         }
         for (const ff of toRemove) document.fonts.delete(ff);
-        localStorage.removeItem(SETTINGS_KEY);
+        [SETTINGS_KEY, OLD_CARDS_KEY, OLD_RECORDS_KEY, OLD_FNAME_KEY, WELCOME_SEEN_KEY, WELCOME_NEVER_KEY].forEach(k => {
+          try { localStorage.removeItem(k); } catch(e) {}
+        });
         try {
           await Promise.all([idbClear('cards'), idbClear('records'), idbClear('filename'), idbClear('fonts')]);
         } catch(e) {}
