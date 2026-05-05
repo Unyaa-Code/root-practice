@@ -51,6 +51,8 @@
         gap: 6px 8px;
         padding: 6px 10px;
       }
+      .top-bar > button,
+      .top-bar > .top-toggle { order: -1; }
       .progress-indicator {
         font-size: 0.8rem;
       }
@@ -106,6 +108,14 @@
     body.night #roundCounter {
       background: #2f384e;
     }
+    .hl-row { display:flex; gap:3px; align-items:center; margin:3px 0; }
+    .hl-row input[type="color"] { width:26px; height:26px; padding:0; border:none; border-radius:4px; cursor:pointer; }
+    .hl-row input[type="text"] { flex:1; min-width:60px; font-size:0.85rem; padding:3px 5px; border:1px solid #ccc; border-radius:4px; }
+    body.night .hl-row input[type="text"] { background:#1e2430; color:#ddd; border-color:#444; }
+    .hl-err { font-size:0.65rem; color:#e44; min-width:42px; white-space:nowrap; }
+    .reset-val { font-size:0.7rem; cursor:pointer; opacity:0.4; border:none; background:none; padding:0 2px; line-height:1; }
+    .reset-val:hover { opacity:1; }
+    .inp-row { display:inline-flex; align-items:center; gap:2px; }
     progress {
       width: 120px;
       height: 8px;
@@ -252,6 +262,8 @@
       background: #20273b;
       border-color: #434e66;
     }
+    .settings-panel a { color: #3a6ea5; text-decoration: underline; }
+    body.night .settings-panel a { color: #6a9bd2; }
     .settings-panel.show {
       display: grid;
     }
@@ -323,6 +335,7 @@
       border-top: 1px solid #d4d4d4;
       grid-column: 1 / -1;
     }
+    .settings-section-title:first-of-type { border-top: none; }
     body.night .settings-section-title {
       border-color: #434e66;
     }
@@ -433,7 +446,7 @@
       <progress id="progressBar" value="0" max="100"></progress>
     </div>
     <button id="nightModeToggle" title="夜间模式">🌙 夜间</button>
-    <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+    <label class="top-toggle" style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
       <input type="checkbox" id="firstCodeModeCheck"> 首码模式
     </label>
   </div>
@@ -459,31 +472,33 @@
 
     <div class="setting-item full">
       <label>🔤 字体候补</label>
-      <input type="text" id="fontFamilyInput">
+      <div class="inp-row">
+        <input type="text" id="fontFamilyInput" data-default="Unyaa-code-PUA, 'Noto Sans SC','Helvetica Neue',Helvetica,'PingFang SC','Hiragino Sans GB','Microsoft YaHei','微软雅黑',Arial,sans-serif">
+        <button class="reset-val" data-for="fontFamilyInput">↺</button>
+      </div>
       <small style="opacity:0.7;">部分名称需使用英文单引号包裹</small>
     </div>
 
     <div class="setting-item">
       <label>元素字号 (rem)</label>
-      <input type="number" id="zigenFontSize" min="2" max="10" step="0.2" value="5.5">
+      <div class="inp-row"><input type="number" id="zigenFontSize" min="2" max="10" step="0.2" value="5.5" data-default="5.5"><button class="reset-val" data-for="zigenFontSize">↺</button></div>
     </div>
     <div class="setting-item">
       <label>答案字号 (rem)</label>
-      <input type="number" id="answerFontSize" min="0.8" max="3" step="0.1" value="1.2">
+      <div class="inp-row"><input type="number" id="answerFontSize" min="0.8" max="3" step="0.1" value="1.2" data-default="1.2"><button class="reset-val" data-for="answerFontSize">↺</button></div>
     </div>
     <div class="setting-item">
       <label>输入框字号 (rem)</label>
-      <input type="number" id="inputFontSize" min="1" max="4" step="0.1" value="1.3">
+      <div class="inp-row"><input type="number" id="inputFontSize" min="1" max="4" step="0.1" value="1.3" data-default="1.3"><button class="reset-val" data-for="inputFontSize">↺</button></div>
     </div>
     <div class="setting-item">
       <label>提示字号 (rem)</label>
-      <input type="number" id="hintFontSize" min="0.8" max="2.5" step="0.1" value="1.2">
+      <div class="inp-row"><input type="number" id="hintFontSize" min="0.8" max="2.5" step="0.1" value="1.2" data-default="1.2"><button class="reset-val" data-for="hintFontSize">↺</button></div>
     </div>
 
     <div class="setting-item">
       <label>卡片内垂直间隙 (px)</label>
-      <input type="range" id="gapSpacing" min="0" max="40" value="8" step="2">
-      <span id="gapValue">8px</span>
+      <div class="inp-row"><input type="range" id="gapSpacing" min="0" max="40" value="8" step="2" data-default="8"><span id="gapValue">8px</span><button class="reset-val" data-for="gapSpacing">↺</button></div>
     </div>
 
     <div class="settings-section-title">📐 元素数量自适应</div>
@@ -493,7 +508,7 @@
         <input type="checkbox" id="wrapByCountCheck">
         <label for="wrapByCountCheck">元素字数大于指定值换行</label>
       </div>
-      <input type="number" id="wrapCountThreshold" min="1" max="100" value="10" placeholder="元素数阈值">
+      <div class="inp-row"><input type="number" id="wrapCountThreshold" min="1" max="100" value="10" placeholder="元素数阈值" data-default="10"><button class="reset-val" data-for="wrapCountThreshold">↺</button></div>
       <small style="opacity:0.7;">元素字数大于此值时自动换行</small>
     </div>
 
@@ -503,8 +518,8 @@
         <label for="fontSizeByCountCheck">元素字数大于指定值调整字号</label>
       </div>
       <div class="two-col-inputs">
-        <input type="number" id="fontSizeCountThreshold" min="1" max="100" value="5" placeholder="元素数阈值">
-        <input type="number" id="fontSizeWhenLarge" min="1" max="10" step="0.1" value="3" placeholder="字号">
+        <div class="inp-row"><input type="number" id="fontSizeCountThreshold" min="1" max="100" value="5" placeholder="元素数阈值" data-default="5"><button class="reset-val" data-for="fontSizeCountThreshold">↺</button></div>
+        <div class="inp-row"><input type="number" id="fontSizeWhenLarge" min="1" max="10" step="0.1" value="3" placeholder="字号" data-default="3"><button class="reset-val" data-for="fontSizeWhenLarge">↺</button></div>
       </div>
       <small style="opacity:0.7;">元素字数大于阈值时使用指定字号</small>
     </div>
@@ -521,11 +536,20 @@
 
     </div>
 
+    <div class="settings-section-title">🎨 元素高亮</div>
+    <div class="setting-item full">
+      <button id="addHighlightRuleBtn" style="margin-bottom:6px;">+ 添加规则</button>
+      <div id="highlightRulesContainer"></div>
+      <small style="opacity:0.5; font-size:0.75rem;">正则匹配元素字根，首个命中的颜色生效（最多10条）</small>
+    </div>
+
     <div class="settings-section-title">💾 数据管理</div>
 
     <div class="setting-item">
       <label>📎 进度导入/导出</label>
       <div class="row-buttons">
+        <button id="exportWithHeaderBtn">导出部分设置</button>
+        <small style="opacity:0.7; white-space:nowrap">导出可在「元素数据」表头中定义的设置项，含元素数据</small>
         <button id="exportProgressBtn">导出进度串</button>
         <button id="importProgressBtn">导入进度</button>
         <button id="clearProgressBtn" class="danger-btn">清空进度</button>
@@ -572,7 +596,7 @@
       <p>一个轻量、开源的网页端输入方案元素（字根、音节等）重复练习工具，专为输入方案学习者设计。</p>
       <p>本工具由《呜喵码》作者 mono、铁圈、冬山秋木 借助 AI 技术共同构建。</p>
       <p>本工具完全开源免费 <a href="https://github.com/Unyaa-Code/root-practice" target="_blank" rel="noopener">GitHub</a><br>如果它为你带来了便利，欢迎移步 <a href="https://github.com/Unyaa-Code/root-practice#赞助" target="_blank" rel="noopener">README 查看赞助方式</a>，每一份支持都是我们持续更新的动力。</p>
-      <p style="opacity:0.5;">v2026-05-04</p>
+      <p style="opacity:0.5;">v2026-05-05</p>
       </div>
     </div>
   </div>
@@ -617,7 +641,8 @@
       fontSizeCountThreshold: 5,
       fontSizeWhenLarge: 3,
       orderMode: false,
-      roundCount: 1
+      roundCount: 1,
+      highlightRules: []
     };
 
     // ============ IndexedDB 核心 ============
@@ -925,6 +950,78 @@
       roundCounter.textContent = `第 ${settings.roundCount} 轮`;
     }
 
+    const MAX_HL = 10;
+
+    function hsl2hex(h, s, l) {
+      s /= 100; l /= 100;
+      const a = s * Math.min(l, 1 - l);
+      const f = n => {
+        const k = (n + h / 30) % 12;
+        return Math.round(255 * (l - a * Math.max(Math.min(k-3,9-k,1),-1))).toString(16).padStart(2,'0');
+      };
+      return '#' + f(0) + f(8) + f(4);
+    }
+
+    function genHlColor(usedHues) {
+      let h; do { h = Math.floor(Math.random() * 360); } while (usedHues.has(h));
+      usedHues.add(h);
+      return { light: hsl2hex(h,60,45), dark: hsl2hex(h,50,35) };
+    }
+
+    function validRegex(p) {
+      if (!p.trim()) return '';
+      try { new RegExp(p); return ''; } catch(e) { return '正则语法错误'; }
+    }
+
+    function matchHighlight(name) {
+      for (const r of settings.highlightRules) {
+        if (!r.pattern.trim()) continue;
+        try { if (new RegExp(r.pattern).test(name)) return settings.night ? r.darkColor : r.lightColor; }
+        catch(e) {}
+      }
+      return '';
+    }
+
+    function renderHighlightRules() {
+      const c = document.getElementById('highlightRulesContainer');
+      let html = '';
+      settings.highlightRules.forEach((r, i) => {
+        const err = validRegex(r.pattern);
+        html += `<div class="hl-row" data-idx="${i}"><input type="color" class="hl-light" value="${r.lightColor}" title="浅色"><input type="color" class="hl-dark" value="${r.darkColor}" title="深色"><input type="text" class="hl-pat" value="${r.pattern.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}" placeholder="正则"><span class="hl-err">${err}</span><button class="hl-del">×</button></div>`;
+      });
+      c.innerHTML = html || '<div style="opacity:0.5;font-size:0.8rem;">暂无高亮规则</div>';
+      document.getElementById('addHighlightRuleBtn').style.display = settings.highlightRules.length >= MAX_HL ? 'none' : '';
+    }
+
+    function collectHighlightRules() {
+      const rows = document.querySelectorAll('.hl-row');
+      settings.highlightRules = [];
+      rows.forEach(row => {
+        settings.highlightRules.push({
+          lightColor: row.querySelector('.hl-light').value,
+          darkColor: row.querySelector('.hl-dark').value,
+          pattern: row.querySelector('.hl-pat').value
+        });
+      });
+      saveSettings();
+      const zc = document.getElementById('zigenChar');
+      if (zc && cards.length) {
+        const c = matchHighlight(currentCard ? currentCard.name : '');
+        zc.style.color = c || '';
+      }
+    }
+
+    function addHighlightRule() {
+      if (settings.highlightRules.length >= MAX_HL) return;
+      const used = new Set(settings.highlightRules.map(r => {
+        const m = r.lightColor.match(/hsl\((\d+)/); return m ? parseInt(m[1]) : null;
+      }).filter(Boolean));
+      const c = genHlColor(used);
+      settings.highlightRules.push({ lightColor: c.light, darkColor: c.dark, pattern: '' });
+      renderHighlightRules();
+      collectHighlightRules();
+    }
+
     // ============ 字体列表UI ============
     function renderFontList() {
       const container = document.getElementById('fontList');
@@ -1052,10 +1149,12 @@
       if (settings.fontSizeByCount && charCount > settings.fontSizeCountThreshold) {
         fontSize = settings.fontSizeWhenLarge;
       }
+      const hlColor = matchHighlight(currentCard ? currentCard.name : '');
+      const hlStyle = hlColor ? `color:${hlColor};` : '';
 
       practiceArea.innerHTML = `
         <div class="practice-area" id="practiceCard">
-          <div class="zigen-display" id="zigenChar" style="${displayStyle} font-size: ${fontSize}rem;">${currentCard ? currentCard.name : '—'}</div>
+          <div class="zigen-display" id="zigenChar" style="${displayStyle} font-size: ${fontSize}rem; ${hlStyle}">${currentCard ? currentCard.name : '—'}</div>
           <div class="hint-area" id="hintDisplay">${hintHtml}</div>
           <div class="answer-preview" id="answerPreview">${answerHtml}</div>
           <div class="input-wrapper">
@@ -1255,9 +1354,18 @@
       });
       try {
         const lines = text.split(/\r?\n/);
+        const headerLines = [];
+        const dataLines = [];
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          if (line.startsWith('#')) { headerLines.push(line); continue; }
+          dataLines.push(line);
+        }
+        parseAndApplyHeader(headerLines);
+
         const newCards = [];
-        for (let i = 0; i < lines.length; i++) {
-          const line = lines[i].trim();
+        for (let i = 0; i < dataLines.length; i++) {
+          const line = dataLines[i].trim();
           if (!line) continue;
           const parts = line.split('\t');
           if (parts.length < 2 || !parts[0] || !parts[1]) continue;
@@ -1273,9 +1381,47 @@
         updateProgressUI();
         await persistAll();
         renderPracticeArea();
+        renderHighlightRules();
       } catch(err) {
         alert('文件解析失败: ' + err.message);
       }
+    }
+
+    function parseAndApplyHeader(lines) {
+      let hlRules = null;
+      const warnings = [];
+      let hasOrderMode = false;
+
+      lines.forEach(l => {
+        const m = l.match(/^#\s*(.+?)\s*:\s*(.*)$/);
+        if (!m) return;
+        const key = m[1].trim(), val = m[2].trim();
+        if (key === '顺序确认模式') {
+          hasOrderMode = true;
+          settings.orderMode = val === 'true';
+        }
+        else if (key === '字体候补') settings.fontFamily = val;
+        else if (key === '高亮规则') {
+          if (!hlRules) hlRules = [];
+          const cm = {};
+          val.replace(/(\S+?)=(\S+)/g, (_, k, v) => { cm[k] = v; });
+          const lightC = cm['浅色'] || '', darkC = cm['深色'] || '';
+          const validHex = /^#[0-9a-fA-F]{6}$/;
+          if (lightC && !validHex.test(lightC)) warnings.push(`浅色 "${lightC}" 格式错误，已使用随机颜色`);
+          if (darkC && !validHex.test(darkC)) warnings.push(`深色 "${darkC}" 格式错误，已使用随机颜色`);
+          const usedHues = new Set(settings.highlightRules.map(r => { const m2 = r.lightColor.match(/hsl\((\d+)/); return m2 ? parseInt(m2[1]) : null; }).filter(Boolean));
+          const c = genHlColor(usedHues);
+          hlRules.push({ lightColor: validHex.test(lightC) ? lightC : c.light, darkColor: validHex.test(darkC) ? darkC : c.dark, pattern: cm['正则'] || '' });
+        }
+      });
+
+      if (!hasOrderMode) settings.orderMode = false;
+      if (hlRules !== null) settings.highlightRules = hlRules;
+      orderModeCheck.checked = settings.orderMode;
+      fontFamilyInput.value = settings.fontFamily;
+      saveSettings();
+
+      if (warnings.length) alert('⚠️ 颜色格式警告:\n' + warnings.join('\n'));
     }
 
     async function clearCards() {
@@ -1292,6 +1438,29 @@
     function exportProgress() {
       if(!cards.length) { alert('无元素数据'); return; }
       document.getElementById('progressImportExport').value = JSON.stringify(records);
+    }
+    function exportWithHeader() {
+      const lines = [];
+      if (settings.orderMode) lines.push('#顺序确认模式: true');
+      if (settings.fontFamily !== DEFAULT_SETTINGS.fontFamily) lines.push('#字体候补: ' + settings.fontFamily);
+      settings.highlightRules.forEach(r => {
+        const parts = ['浅色=' + r.lightColor, '深色=' + r.darkColor];
+        if (r.pattern) parts.push('正则=' + r.pattern);
+        lines.push('#高亮规则: ' + parts.join(' '));
+      });
+      cards.forEach(c => {
+        const row = [c.name, c.key];
+        if (c.hint) row.push(c.hint);
+        lines.push(row.join('\t'));
+      });
+      const text = lines.join('\n') || '';
+      const name = cards.length ? currentFileName + '-含表头' : '表头';
+      const blob = new Blob(['\ufeff', text], { type: 'text/plain;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = name + '.txt';
+      a.click();
+      URL.revokeObjectURL(a.href);
     }
     async function importProgress() {
       const str = document.getElementById('progressImportExport').value.trim();
@@ -1414,9 +1583,32 @@
         document.body.classList.toggle('night', settings.night);
         nightToggle.textContent = settings.night ? '☀️ 日间' : '🌙 夜间';
         saveSettings();
+        if (settings.highlightRules.length && cards.length) renderPracticeArea();
       });
       firstCodeCheck.addEventListener('change', saveSettings);
       orderModeCheck.addEventListener('change', saveSettings);
+      document.getElementById('highlightRulesContainer').addEventListener('input', (e) => {
+        if (e.target.closest('.hl-pat, .hl-light, .hl-dark')) collectHighlightRules();
+      });
+      document.getElementById('highlightRulesContainer').addEventListener('click', (e) => {
+        const btn = e.target.closest('.hl-del');
+        if (!btn) return;
+        const idx = parseInt(btn.closest('.hl-row').dataset.idx);
+        settings.highlightRules.splice(idx, 1);
+        renderHighlightRules();
+        collectHighlightRules();
+      });
+      document.getElementById('addHighlightRuleBtn').addEventListener('click', addHighlightRule);
+      document.getElementById('settingsPanel').addEventListener('click', (e) => {
+        const btn = e.target.closest('.reset-val');
+        if (!btn) return;
+        const inp = document.getElementById(btn.dataset.for);
+        if (!inp) return;
+        const d = inp.dataset.default;
+        if (d == null || !confirm(`重置为 ${d}？`)) return;
+        inp.value = d;
+        saveSettings();
+      });
       toggleSettingsBtn.addEventListener('click', ()=> settingsPanel.classList.toggle('show'));
       document.getElementById('restartBtnTop').addEventListener('click', restartProgress);
 
@@ -1437,6 +1629,7 @@
 
       document.getElementById('clearCardsBtn').addEventListener('click', clearCards);
       document.getElementById('exportProgressBtn').addEventListener('click', exportProgress);
+      document.getElementById('exportWithHeaderBtn').addEventListener('click', exportWithHeader);
       document.getElementById('importProgressBtn').addEventListener('click', importProgress);
       document.getElementById('clearProgressBtn').addEventListener('click', restartProgress);
       document.getElementById('resetSettingsBtn').addEventListener('click', ()=>{
@@ -1495,6 +1688,7 @@
         renderPracticeArea();
         updateProgressUI();
         renderFontList();
+        renderHighlightRules();
       });
     }
 
@@ -1519,6 +1713,7 @@
       await registerAllFonts();
       await loadStoredData();
       renderFontList();
+      renderHighlightRules();
       bindEvents();
 
       if (shouldShowWelcome()) {
