@@ -69,9 +69,6 @@
       .zigen-display {
         font-size: 3.5rem;
       }
-      .import-center-area {
-        padding: 24px 12px;
-      }
     }
     body.night .top-bar {
       background: #252b3d;
@@ -126,7 +123,7 @@
     body.night progress::-webkit-progress-bar { background: #3d455b; }
     body.night progress::-webkit-progress-value { background: #6a9bd2; }
 
-    button, .btn-like {
+    button {
       background: #e6e6e6;
       border: 1px solid #b0b0b0;
       padding: 6px 14px;
@@ -222,11 +219,18 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      padding: 40px 20px;
+      padding: 40px 20px 20px;
       border: 2px dashed #ccc;
       border-radius: 12px;
       margin: 20px 0;
+      min-height: 340px;
+    }
+    .import-center-main {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      margin-top: auto;
     }
     .import-center-btn {
       font-size: 1.2rem;
@@ -242,6 +246,26 @@
       border-color: #6a9bd2;
       color: #bdd4f0;
     }
+    .import-center-zip-wrap {
+      align-self: flex-end;
+      margin-top: auto;
+      padding-right: 5px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+    }
+    .import-center-zip-btn {
+      font-size: 0.88rem;
+      padding: 8px 18px;
+      background: #f5f5f5;
+      border: 1px solid #bbb;
+      color: #666;
+      border-radius: 20px;
+      cursor: pointer;
+    }
+    body.night .import-center-zip-btn { background: #2a3448; border-color: #555; color: #aaa; }
+    .import-center-zip-hint { font-size: 0.7rem; opacity: 0.45; text-align: right; }
 
     /* 设置面板 (二级菜单) */
     .settings-toggle {
@@ -400,13 +424,6 @@
     }
     .font-copy-btn:hover { opacity: 1; }
 
-    hr { opacity: 0.3; margin: 12px 0; }
-    .footer-note {
-      margin-top: 20px;
-      font-size: 0.8rem;
-      text-align: center;
-      opacity: 0.6;
-    }
     .welcome-overlay {
       position: fixed; inset: 0;
       background: rgba(0,0,0,0.45);
@@ -596,7 +613,7 @@
       <p>一个轻量、开源的网页端输入方案元素（字根、音节等）重复练习工具，专为输入方案学习者设计。</p>
       <p>本工具由《呜喵码》作者 mono、铁圈、冬山秋木 借助 AI 技术共同构建。</p>
       <p>本工具完全开源免费 <a href="https://github.com/Unyaa-Code/root-practice" target="_blank" rel="noopener">GitHub</a><br>如果它为你带来了便利，欢迎移步 <a href="https://github.com/Unyaa-Code/root-practice#赞助" target="_blank" rel="noopener">README 查看赞助方式</a>，每一份支持都是我们持续更新的动力。</p>
-      <p style="opacity:0.5;">v2026-05-05</p>
+      <p style="opacity:0.5;">v2026-05-07</p>
       </div>
     </div>
   </div>
@@ -744,9 +761,6 @@
     }
     async function getFontCount() {
       return idbCount('fonts');
-    }
-    async function clearAllFonts() {
-      await idbClear('fonts');
     }
 
     // ============ 字体名解析 ============
@@ -1120,10 +1134,16 @@
       if (!cards.length) {
         practiceArea.innerHTML = `
           <div class="import-center-area">
-            <div style="font-size:1.5rem; margin-bottom:20px; opacity:0.7;">✨ 导入元素开始练习</div>
-            <button class="import-center-btn" id="centerImportBtn">📁 选择元素文件</button>
-            <small style="opacity:0.7;">格式: 每行一条，Tab 分隔（元素\t编码\t提示）第三列可省略</small>
+            <div class="import-center-main">
+              <div style="font-size:1.5rem; margin-bottom:8px; opacity:0.7;">✨ 导入元素开始练习</div>
+              <button class="import-center-btn" id="centerImportBtn">📄 选择元素文件.txt</button>
+              <small style="opacity:0.7;">格式: 每行一条，Tab 分隔（元素\t编码\t提示）第三列可省略</small>
+            </div>
+            <div class="import-center-zip-wrap">
+              <button class="import-center-zip-btn" id="centerZipBtn">🗜 选择ZIP</button>
+            </div>
             <input type="file" id="centerFileInput" accept=".txt,.tsv,.csv,.json,application/json,text/plain" style="display:none;">
+            <input type="file" id="centerZipInput" accept=".zip,application/zip" style="display:none;">
           </div>
         `;
         document.getElementById('centerImportBtn').addEventListener('click', ()=>{
@@ -1132,6 +1152,13 @@
         document.getElementById('centerFileInput').addEventListener('change', (e)=>{
           const file = e.target.files[0];
           if(file) importFile(file);
+        });
+        document.getElementById('centerZipBtn').addEventListener('click', ()=>{
+          document.getElementById('centerZipInput').click();
+        });
+        document.getElementById('centerZipInput').addEventListener('change', (e)=>{
+          const file = e.target.files[0];
+          if(file) importZip(file);
         });
         document.getElementById('restartBtnWrap').style.display = 'none';
         return;
@@ -1384,6 +1411,98 @@
         renderHighlightRules();
       } catch(err) {
         alert('文件解析失败: ' + err.message);
+      }
+    }
+
+    async function zipInflate(buf) {
+      const ds = new DecompressionStream('deflate-raw');
+      const writer = ds.writable.getWriter();
+      writer.write(buf);
+      writer.close();
+      const out = []; const reader = ds.readable.getReader();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        out.push(value);
+      }
+      let total = 0; for (const c of out) total += c.byteLength;
+      const result = new Uint8Array(total); let p = 0;
+      for (const c of out) { result.set(new Uint8Array(c), p); p += c.byteLength; }
+      return result.buffer;
+    }
+
+    function zipDecodeName(buf, off, nameLen, flags) {
+      const bytes = new Uint8Array(buf, off, nameLen);
+      if (flags & 0x0800) return new TextDecoder('utf-8').decode(bytes);
+      try { return new TextDecoder('utf-8', { fatal: true }).decode(bytes); } catch(e) {}
+      try { return new TextDecoder('gbk').decode(bytes); } catch(e) {}
+      try { return new TextDecoder('gb18030').decode(bytes); } catch(e) {}
+      return new TextDecoder('utf-8').decode(bytes);
+    }
+
+    async function importZip(file) {
+      try {
+        const buf = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsArrayBuffer(file);
+        });
+        const v = new DataView(buf, 0, buf.byteLength);
+        let off = 0; const entries = [];
+        while (off + 30 <= buf.byteLength && v.getUint32(off, true) === 0x04034b50) {
+          const flags = v.getUint16(off + 6, true);
+          const method = v.getUint16(off + 8, true);
+          const compSize = v.getUint32(off + 18, true);
+          const nameLen = v.getUint16(off + 26, true);
+          const extraLen = v.getUint16(off + 28, true);
+          const name = zipDecodeName(buf, off + 30, nameLen, flags);
+          const dataOff = off + 30 + nameLen + extraLen;
+          if (name.endsWith('/')) { off = dataOff + compSize; continue; }
+          const raw = new Uint8Array(buf, dataOff, compSize);
+          let decompressed = null;
+          if (method === 0) decompressed = buf.slice(dataOff, dataOff + compSize);
+          else if (method === 8) decompressed = await zipInflate(raw);
+          entries.push({ name, data: decompressed, method });
+          off = dataOff + compSize;
+        }
+        if (!entries.length) throw new Error('ZIP 内无有效文件');
+
+        const txt = entries.find(e => e.name.endsWith('.txt') || e.name.endsWith('.tsv'));
+        if (!txt) throw new Error('ZIP 内无元素列表 .txt 文件');
+
+        let fonts = entries.filter(e => /\.(ttf|otf|woff|woff2)$/i.test(e.name));
+        if (fonts.length > MAX_FONTS) {
+          fonts.sort((a, b) => a.name.localeCompare(b.name));
+          const skipped = fonts.slice(MAX_FONTS);
+          fonts = fonts.slice(0, MAX_FONTS);
+          alert('⚠️ ZIP 内含 ' + (fonts.length + skipped.length) + ' 个字体，仅导入前 ' + MAX_FONTS + ' 个（按文件名字母序）：\n' +
+            fonts.map(f => '✓ ' + f.name).join('\n') + '\n跳过：\n' + skipped.map(f => '✗ ' + f.name).join('\n'));
+        }
+        for (const f of fonts) {
+          const ext = f.name.split('.').pop().toLowerCase();
+          const count = await getFontCount();
+          if (count >= MAX_FONTS) break;
+          const fontName = await parseFontFamily(f.data, ext, f.name.split('/').pop());
+          const id = 'font_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+          const ok = await registerFont({ id, name: fontName, format: ext, buffer: f.data });
+          if (ok) await saveFont(id, { id, name: fontName, format: ext, buffer: f.data });
+        }
+
+        const txtBytes = new Uint8Array(txt.data);
+        let text;
+        try { text = new TextDecoder('utf-8', { fatal: true }).decode(txtBytes); } catch(e) {
+          try { text = new TextDecoder('gbk').decode(txtBytes); } catch(e2) {
+            text = new TextDecoder().decode(txtBytes);
+          }
+        }
+        const fakeFile = new Blob([text], { type: 'text/plain' });
+        const displayName = (txt.name.includes('/') ? txt.name.split('/').pop() : txt.name) || file.name;
+        Object.defineProperty(fakeFile, 'name', { value: displayName, writable: true });
+        await importFile(fakeFile);
+        await refreshFontList();
+      } catch(err) {
+        alert('ZIP 解析失败: ' + err.message);
       }
     }
 
