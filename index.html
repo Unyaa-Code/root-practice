@@ -512,6 +512,11 @@
       <label>提示字号 (rem)</label>
       <div class="inp-row"><input type="number" id="hintFontSize" min="0.8" max="2.5" step="0.1" value="1.2" data-default="1.2"><button class="reset-val" data-for="hintFontSize">↺</button></div>
     </div>
+    <div class="setting-item">
+      <label>注释字号 (rem)</label>
+      <div class="inp-row"><input type="number" id="commentFontSize" min="1" max="6" step="0.1" value="2" data-default="2"><button class="reset-val" data-for="commentFontSize">↺</button></div>
+      <small style="opacity:0.7;">使用-[]-包裹的元素注释字号</small>
+    </div>
 
     <div class="setting-item">
       <label>卡片内垂直间隙 (px)</label>
@@ -613,7 +618,7 @@
       <p>一个轻量、开源的网页端输入方案元素（字根、音节等）重复练习工具，专为输入方案学习者设计。</p>
       <p>本工具由《呜喵码》作者 mono、铁圈、冬山秋木 借助 AI 技术共同构建。</p>
       <p>本工具完全开源免费 <a href="https://github.com/Unyaa-Code/root-practice" target="_blank" rel="noopener">GitHub</a><br>如果它为你带来了便利，欢迎移步 <a href="https://github.com/Unyaa-Code/root-practice#赞助" target="_blank" rel="noopener">README 查看赞助方式</a>，每一份支持都是我们持续更新的动力。</p>
-      <p style="opacity:0.5;">v2026-05-07</p>
+      <p style="opacity:0.5;">v2026-05-09</p>
       </div>
     </div>
   </div>
@@ -649,6 +654,7 @@
       answerSize: 1.2,
       inputSize: 1.3,
       hintSize: 1.2,
+      commentSize: 2,
       gap: 8,
       night: false,
       firstCode: false,
@@ -948,6 +954,7 @@
     const answerFontSize = document.getElementById('answerFontSize');
     const inputFontSize = document.getElementById('inputFontSize');
     const hintFontSize = document.getElementById('hintFontSize');
+    const commentFontSize = document.getElementById('commentFontSize');
     const gapSpacing = document.getElementById('gapSpacing');
     const gapValue = document.getElementById('gapValue');
     const wrapByCountCheck = document.getElementById('wrapByCountCheck');
@@ -1117,6 +1124,10 @@
 
     function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
+    function getPureCharCount(name) {
+      return (name || '').replace(/-\[.+?\]-/g, '').replace(/\s+/g, '').length;
+    }
+
     // ============ 数据持久化 ============
     async function persistAll() {
       if (!db) return;
@@ -1167,7 +1178,7 @@
       const hintHtml = currentCard?.hint ? `💡 ${currentCard.hint}` : '';
       const answerHtml = isFirst ? `答案：<b style="font-family:monospace;">${currentCard.key}</b>` : '';
 
-      const charCount = currentCard ? currentCard.name.length : 0;
+      const charCount = currentCard ? getPureCharCount(currentCard.name) : 0;
       let displayStyle = "white-space: nowrap;";
       if (settings.wrapByCount && charCount > settings.wrapCountThreshold) {
         displayStyle = "white-space: normal; word-break: break-all;";
@@ -1179,9 +1190,41 @@
       const hlColor = matchHighlight(currentCard ? currentCard.name : '');
       const hlStyle = hlColor ? `color:${hlColor};` : '';
 
+      let nameDisplayHtml = '';
+      let isCentered = false;
+      if (currentCard && currentCard.comments && currentCard.comments.length > 0) {
+        const commentStyle = `font-size:${settings.commentSize}rem;color:#777;opacity:0.7;white-space:nowrap;`;
+        const segments = [];
+        let lastIdx = 0;
+        const regex = /-\[(.+?)\]-/g;
+        let m;
+        while ((m = regex.exec(currentCard.originalName)) !== null) {
+          if (m.index > lastIdx) {
+            segments.push({ t: 'root', v: currentCard.originalName.substring(lastIdx, m.index), i: segments.length });
+          }
+          segments.push({ t: 'comment', v: m[1], i: segments.length });
+          lastIdx = m.index + m[0].length;
+        }
+        if (lastIdx < currentCard.originalName.length) {
+          segments.push({ t: 'root', v: currentCard.originalName.substring(lastIdx), i: segments.length });
+        }
+        const rootSegments = segments.filter(s => s.t === 'root');
+        isCentered = rootSegments.length === 1 && getPureCharCount(currentCard.name) === 1;
+        if (isCentered) {
+          const rootV = escHtml(rootSegments[0].v);
+          const leftComments = segments.filter(s => s.t === 'comment' && s.i < rootSegments[0].i);
+          const rightComments = segments.filter(s => s.t === 'comment' && s.i > rootSegments[0].i);
+          nameDisplayHtml = `<span style="display:inline-flex;align-items:center;position:relative;">${leftComments.map(s => `<span style="position:absolute;right:calc(100% + 0.5em);${commentStyle}">${escHtml(s.v)}</span>`).join('')}<span>${rootV}</span>${rightComments.map(s => `<span style="position:absolute;left:calc(100% + 0.5em);${commentStyle}">${escHtml(s.v)}</span>`).join('')}</span>`;
+        } else {
+          nameDisplayHtml = segments.map(s => s.t === 'comment' ? `<span style="vertical-align:middle;${commentStyle}">${escHtml(s.v)}</span>` : escHtml(s.v)).join('');
+        }
+      } else {
+        nameDisplayHtml = currentCard ? escHtml(currentCard.name) : '—';
+      }
+
       practiceArea.innerHTML = `
         <div class="practice-area" id="practiceCard">
-          <div class="zigen-display" id="zigenChar" style="${displayStyle} font-size: ${fontSize}rem; ${hlStyle}">${currentCard ? currentCard.name : '—'}</div>
+          <div class="zigen-display" id="zigenChar" style="${displayStyle} font-size: ${fontSize}rem; ${hlStyle}${isCentered ? 'overflow:visible;' : ''}">${nameDisplayHtml}</div>
           <div class="hint-area" id="hintDisplay">${hintHtml}</div>
           <div class="answer-preview" id="answerPreview">${answerHtml}</div>
           <div class="input-wrapper">
@@ -1206,7 +1249,7 @@
       const answerInput = document.getElementById('answerInput');
       const practiceCard = document.getElementById('practiceCard');
       if(zigenChar) {
-        const charCount = currentCard ? currentCard.name.length : 0;
+        const charCount = currentCard ? getPureCharCount(currentCard.name) : 0;
         let fontSize = settings.zigenSize;
         if (settings.fontSizeByCount && charCount > settings.fontSizeCountThreshold) fontSize = settings.fontSizeWhenLarge;
         zigenChar.style.fontSize = fontSize + 'rem';
@@ -1396,7 +1439,16 @@
           if (!line) continue;
           const parts = line.split('\t');
           if (parts.length < 2 || !parts[0] || !parts[1]) continue;
-          newCards.push({ name: parts[0], key: parts[1], hint: (parts[2] || '').trim() });
+          const nameWithComment = parts[0];
+          const commentMatches = [...nameWithComment.matchAll(/-\[(.+?)\]-/g)];
+          const displayName = nameWithComment.replace(/-\[.+?\]-/g, '').replace(/\s+/g, '');
+          newCards.push({ 
+            name: displayName, 
+            key: parts[1], 
+            hint: (parts[2] || '').trim(),
+            originalName: nameWithComment,
+            comments: commentMatches.map(m => m[1])
+          });
         }
         if(newCards.length === 0) throw new Error('无有效数据行');
 
@@ -1606,6 +1658,7 @@
       answerFontSize.value = settings.answerSize;
       inputFontSize.value = settings.inputSize;
       hintFontSize.value = settings.hintSize;
+      commentFontSize.value = settings.commentSize;
       gapSpacing.value = settings.gap;
       gapValue.textContent = settings.gap + 'px';
       firstCodeCheck.checked = settings.firstCode;
@@ -1630,6 +1683,7 @@
       settings.answerSize = parseFloat(answerFontSize.value) || 1.2;
       settings.inputSize = parseFloat(inputFontSize.value) || 1.3;
       settings.hintSize = parseFloat(hintFontSize.value) || 1.2;
+      settings.commentSize = parseFloat(commentFontSize.value) || 2;
       settings.gap = parseInt(gapSpacing.value) || 8;
       settings.firstCode = firstCodeCheck.checked;
       settings.wrapByCount = wrapByCountCheck.checked;
@@ -1731,11 +1785,12 @@
       toggleSettingsBtn.addEventListener('click', ()=> settingsPanel.classList.toggle('show'));
       document.getElementById('restartBtnTop').addEventListener('click', restartProgress);
 
-      [fontFamilyInput, zigenFontSize, answerFontSize, inputFontSize, hintFontSize, gapSpacing,
+      [fontFamilyInput, zigenFontSize, answerFontSize, inputFontSize, hintFontSize, commentFontSize, gapSpacing,
        wrapByCountCheck, wrapCountThreshold, fontSizeByCountCheck, fontSizeCountThreshold, fontSizeWhenLarge].forEach(el =>
         el.addEventListener('input', saveSettings)
       );
       gapSpacing.addEventListener('input', ()=> gapValue.textContent = gapSpacing.value+'px');
+      commentFontSize.addEventListener('input', () => { if (cards.length) renderPracticeArea(); });
 
       document.getElementById('importFontBtn').addEventListener('click', ()=>{
         document.getElementById('fontFileInput').click();
@@ -1759,6 +1814,7 @@
           answerFontSize.value = settings.answerSize;
           inputFontSize.value = settings.inputSize;
           hintFontSize.value = settings.hintSize;
+          commentFontSize.value = settings.commentSize;
           gapSpacing.value = settings.gap;
           wrapByCountCheck.checked = settings.wrapByCount;
           wrapCountThreshold.value = settings.wrapCountThreshold;
@@ -1799,6 +1855,7 @@
         answerFontSize.value = settings.answerSize;
         inputFontSize.value = settings.inputSize;
         hintFontSize.value = settings.hintSize;
+        commentFontSize.value = settings.commentSize;
         gapSpacing.value = settings.gap;
         wrapCountThreshold.value = settings.wrapCountThreshold;
         fontSizeCountThreshold.value = settings.fontSizeCountThreshold;
