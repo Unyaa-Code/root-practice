@@ -484,7 +484,30 @@
   </div>
 
   <!-- 二级菜单面板 -->
+
   <div class="settings-panel" id="settingsPanel">
+
+    <div class="settings-section-title">💾 数据管理</div>
+
+    <div class="setting-item">
+      <label>📎 进度导入/导出</label>
+      <div class="row-buttons">
+        <button id="exportWithHeaderBtn">导出部分设置</button>
+        <small style="opacity:0.7; white-space:nowrap">导出可在「元素数据」表头中定义的设置项，含元素数据</small>
+        <button id="exportProgressBtn">导出进度串</button>
+        <button id="importProgressBtn">导入进度</button>
+        <button id="clearProgressBtn" class="danger-btn">清空进度</button>
+      </div>
+      <textarea id="progressImportExport" placeholder="粘贴进度字符串" rows="2" style="resize:vertical; margin-top:6px; border-radius:8px; padding:8px; width:100%; box-sizing:border-box;"></textarea>
+    </div>
+
+    <div class="setting-item">
+      <label>🗑️ 清空元素数据</label>
+      <div class="row-buttons">
+        <button id="clearCardsBtn" class="danger-btn">清空元素数据</button>
+      </div>
+    </div>
+
     <div class="settings-section-title"> 显示设置</div>
 
     <div class="setting-item full">
@@ -515,7 +538,7 @@
     <div class="setting-item">
       <label>注释字号 (rem)</label>
       <div class="inp-row"><input type="number" id="commentFontSize" min="1" max="6" step="0.1" value="2" data-default="2"><button class="reset-val" data-for="commentFontSize">↺</button></div>
-      <small style="opacity:0.7;">使用-[]-包裹的元素注释字号</small>
+      <small style="opacity:0.7;">元素旁注释字号</small>
     </div>
 
     <div class="setting-item">
@@ -546,6 +569,22 @@
       <small style="opacity:0.7;">元素字数大于阈值时使用指定字号</small>
     </div>
 
+
+    <div class="settings-section-title">🔤 字体管理</div>
+
+    <div class="setting-item">
+      <label>📥 导入自定义字体 (ttf/woff/woff2，最多2个)</label>
+      <div class="row-buttons">
+        <input type="file" id="fontFileInput" accept=".ttf,.otf,.woff,.woff2" style="display:none;">
+        <button id="importFontBtn">📁 导入字体文件</button>
+      </div>
+    </div>
+
+    <div class="setting-item full">
+      <label>已导入字体</label>
+      <div id="fontList">暂无导入字体</div>
+    </div>
+
     <div class="settings-section-title">🎯 练习模式</div>
 
     <div class="setting-item">
@@ -565,42 +604,6 @@
       <small style="opacity:0.5; font-size:0.75rem;">正则匹配元素字根，首个命中的颜色生效（最多10条）</small>
     </div>
 
-    <div class="settings-section-title">💾 数据管理</div>
-
-    <div class="setting-item">
-      <label>📎 进度导入/导出</label>
-      <div class="row-buttons">
-        <button id="exportWithHeaderBtn">导出部分设置</button>
-        <small style="opacity:0.7; white-space:nowrap">导出可在「元素数据」表头中定义的设置项，含元素数据</small>
-        <button id="exportProgressBtn">导出进度串</button>
-        <button id="importProgressBtn">导入进度</button>
-        <button id="clearProgressBtn" class="danger-btn">清空进度</button>
-      </div>
-      <textarea id="progressImportExport" placeholder="粘贴进度字符串" rows="2" style="resize:vertical; margin-top:6px; border-radius:8px; padding:8px; width:100%; box-sizing:border-box;"></textarea>
-    </div>
-
-    <div class="setting-item">
-      <label>🗑️ 清空元素数据</label>
-      <div class="row-buttons">
-        <button id="clearCardsBtn" class="danger-btn">清空元素数据</button>
-      </div>
-    </div>
-
-    <div class="settings-section-title">🔤 字体管理</div>
-
-    <div class="setting-item">
-      <label>📥 导入自定义字体 (ttf/woff/woff2，最多2个)</label>
-      <div class="row-buttons">
-        <input type="file" id="fontFileInput" accept=".ttf,.otf,.woff,.woff2" style="display:none;">
-        <button id="importFontBtn">📁 导入字体文件</button>
-      </div>
-    </div>
-
-    <div class="setting-item full">
-      <label>已导入字体</label>
-      <div id="fontList">暂无导入字体</div>
-    </div>
-
     <div class="settings-section-title">🧹 重置</div>
 
     <div class="setting-item">
@@ -618,7 +621,7 @@
       <p>一个轻量、开源的网页端输入方案元素（字根、音节等）重复练习工具，专为输入方案学习者设计。</p>
       <p>本工具由《呜喵码》作者 mono、铁圈、冬山秋木 借助 AI 技术共同构建。</p>
       <p>本工具完全开源免费 <a href="https://github.com/Unyaa-Code/root-practice" target="_blank" rel="noopener">GitHub</a><br>如果它为你带来了便利，欢迎移步 <a href="https://github.com/Unyaa-Code/root-practice#赞助" target="_blank" rel="noopener">README 查看赞助方式</a>，每一份支持都是我们持续更新的动力。</p>
-      <p style="opacity:0.5;">v2026-05-09</p>
+      <p style="opacity:0.5;">v2026-05-10</p>
       </div>
     </div>
   </div>
@@ -1140,6 +1143,54 @@
       } catch(e) { console.error('持久化失败:', e); }
     }
 
+    function buildCardDisplay(card) {
+      if (!card) return { html: '—', isCentered: false };
+      if (card.comments && card.comments.length > 0 && card.originalName) {
+        const commentStyle = `font-size:${settings.commentSize}rem;color:#777;opacity:0.7;white-space:nowrap;`;
+        const segments = [];
+        let lastIdx = 0;
+        const regex = /-\[(.+?)\]-/g;
+        let m;
+        while ((m = regex.exec(card.originalName)) !== null) {
+          if (m.index > lastIdx) segments.push({ t: 'root', v: card.originalName.substring(lastIdx, m.index), i: segments.length });
+          segments.push({ t: 'comment', v: m[1], i: segments.length });
+          lastIdx = m.index + m[0].length;
+        }
+        if (lastIdx < card.originalName.length) segments.push({ t: 'root', v: card.originalName.substring(lastIdx), i: segments.length });
+        const rootSegments = segments.filter(s => s.t === 'root');
+        const isCentered = rootSegments.length === 1 && getPureCharCount(card.name) === 1;
+        if (isCentered) {
+          const rootV = escHtml(rootSegments[0].v);
+          const leftComments = segments.filter(s => s.t === 'comment' && s.i < rootSegments[0].i);
+          const rightComments = segments.filter(s => s.t === 'comment' && s.i > rootSegments[0].i);
+          return { html: `<span style="display:inline-flex;align-items:center;position:relative;">${leftComments.map(s => `<span style="position:absolute;right:calc(100% + 0.5em);${commentStyle}">${escHtml(s.v)}</span>`).join('')}<span>${rootV}</span>${rightComments.map(s => `<span style="position:absolute;left:calc(100% + 0.5em);${commentStyle}">${escHtml(s.v)}</span>`).join('')}</span>`, isCentered: true };
+        }
+        return { html: segments.map(s => s.t === 'comment' ? `<span style="vertical-align:middle;${commentStyle}">${escHtml(s.v)}</span>` : escHtml(s.v)).join(''), isCentered: false };
+      }
+      return { html: escHtml(card.name), isCentered: false };
+    }
+
+    function softUpdate() {
+      if (!cards.length || !currentCard) return;
+      document.getElementById('restartBtnWrap').style.display = '';
+      const zc = document.getElementById('zigenChar');
+      if (zc) {
+        const { html, isCentered } = buildCardDisplay(currentCard);
+        zc.innerHTML = html;
+        zc.style.overflow = isCentered ? 'visible' : '';
+        const hlColor = matchHighlight(currentCard.name);
+        zc.style.color = hlColor || '';
+      }
+      const hintEl = document.getElementById('hintDisplay');
+      if (hintEl) hintEl.innerHTML = currentCard?.hint ? `💡 ${currentCard.hint}` : '';
+      const apEl = document.getElementById('answerPreview');
+      if (apEl) apEl.innerHTML = isFirst ? `答案：<b style="font-family:monospace;">${currentCard.key}</b>` : '';
+      const inp = document.getElementById('answerInput');
+      if (inp) inp.value = '';
+      applyStylesToDynamic();
+      updateProgressUI();
+    }
+
     // ============ 练习区渲染 ============
     function renderPracticeArea() {
       if (!cards.length) {
@@ -1151,7 +1202,7 @@
               <small style="opacity:0.7;">格式: 每行一条，Tab 分隔（元素\t编码\t提示）第三列可省略</small>
             </div>
             <div class="import-center-zip-wrap">
-              <button class="import-center-zip-btn" id="centerZipBtn">🗜 选择ZIP</button>
+              <button class="import-center-zip-btn" id="centerZipBtn">选择ZIP</button>
             </div>
             <input type="file" id="centerFileInput" accept=".txt,.tsv,.csv,.json,application/json,text/plain" style="display:none;">
             <input type="file" id="centerZipInput" accept=".zip,application/zip" style="display:none;">
@@ -1190,37 +1241,7 @@
       const hlColor = matchHighlight(currentCard ? currentCard.name : '');
       const hlStyle = hlColor ? `color:${hlColor};` : '';
 
-      let nameDisplayHtml = '';
-      let isCentered = false;
-      if (currentCard && currentCard.comments && currentCard.comments.length > 0) {
-        const commentStyle = `font-size:${settings.commentSize}rem;color:#777;opacity:0.7;white-space:nowrap;`;
-        const segments = [];
-        let lastIdx = 0;
-        const regex = /-\[(.+?)\]-/g;
-        let m;
-        while ((m = regex.exec(currentCard.originalName)) !== null) {
-          if (m.index > lastIdx) {
-            segments.push({ t: 'root', v: currentCard.originalName.substring(lastIdx, m.index), i: segments.length });
-          }
-          segments.push({ t: 'comment', v: m[1], i: segments.length });
-          lastIdx = m.index + m[0].length;
-        }
-        if (lastIdx < currentCard.originalName.length) {
-          segments.push({ t: 'root', v: currentCard.originalName.substring(lastIdx), i: segments.length });
-        }
-        const rootSegments = segments.filter(s => s.t === 'root');
-        isCentered = rootSegments.length === 1 && getPureCharCount(currentCard.name) === 1;
-        if (isCentered) {
-          const rootV = escHtml(rootSegments[0].v);
-          const leftComments = segments.filter(s => s.t === 'comment' && s.i < rootSegments[0].i);
-          const rightComments = segments.filter(s => s.t === 'comment' && s.i > rootSegments[0].i);
-          nameDisplayHtml = `<span style="display:inline-flex;align-items:center;position:relative;">${leftComments.map(s => `<span style="position:absolute;right:calc(100% + 0.5em);${commentStyle}">${escHtml(s.v)}</span>`).join('')}<span>${rootV}</span>${rightComments.map(s => `<span style="position:absolute;left:calc(100% + 0.5em);${commentStyle}">${escHtml(s.v)}</span>`).join('')}</span>`;
-        } else {
-          nameDisplayHtml = segments.map(s => s.t === 'comment' ? `<span style="vertical-align:middle;${commentStyle}">${escHtml(s.v)}</span>` : escHtml(s.v)).join('');
-        }
-      } else {
-        nameDisplayHtml = currentCard ? escHtml(currentCard.name) : '—';
-      }
+      const { html: nameDisplayHtml, isCentered } = buildCardDisplay(currentCard);
 
       practiceArea.innerHTML = `
         <div class="practice-area" id="practiceCard">
@@ -1331,7 +1352,7 @@
         isFirst = true;
         updateProgressUI();
         persistAll();
-        renderPracticeArea();
+        softUpdate();
         const inp = document.getElementById('answerInput');
         if(inp) {
           inp.classList.add('input-error');
@@ -1351,9 +1372,9 @@
         if (records[0][0] === 8) {
           renderCompletionView();
         } else {
-          renderPracticeArea();
-          const newInput = document.getElementById('answerInput');
-          if (newInput) { newInput.value = ''; newInput.focus(); }
+          softUpdate();
+          const inp = document.getElementById('answerInput');
+          if (inp) inp.focus();
         }
         return;
       }
@@ -1378,9 +1399,9 @@
       syncSortAndCard();
       updateProgressUI();
       persistAll();
-      renderPracticeArea();
-      const newInput = document.getElementById('answerInput');
-      if(newInput) { newInput.value = ''; newInput.focus(); }
+      softUpdate();
+      const inp = document.getElementById('answerInput');
+      if(inp) inp.focus();
     }
 
     function handleInput(e) {
@@ -1790,7 +1811,7 @@
         el.addEventListener('input', saveSettings)
       );
       gapSpacing.addEventListener('input', ()=> gapValue.textContent = gapSpacing.value+'px');
-      commentFontSize.addEventListener('input', () => { if (cards.length) renderPracticeArea(); });
+      commentFontSize.addEventListener('input', () => { if (cards.length) softUpdate(); });
 
       document.getElementById('importFontBtn').addEventListener('click', ()=>{
         document.getElementById('fontFileInput').click();
