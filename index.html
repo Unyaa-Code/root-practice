@@ -1186,7 +1186,7 @@
       const apEl = document.getElementById('answerPreview');
       if (apEl) apEl.innerHTML = isFirst ? `答案：<b style="font-family:monospace;">${currentCard.key}</b>` : '';
       const inp = document.getElementById('answerInput');
-      if (inp) inp.value = '';
+      if (inp) { inp.value = ''; inp.classList.remove('input-error'); }
       applyStylesToDynamic();
       updateProgressUI();
     }
