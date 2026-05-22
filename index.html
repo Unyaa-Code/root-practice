@@ -450,6 +450,57 @@
       width: 100%; font-weight: 600;
     }
     body.night .welcome-close { background: #5a7fb5; }
+
+    .description-section {
+      margin-top: 18px;
+      padding: 14px 18px;
+      background: #f7f7f7;
+      border: 1px solid #d8d8d8;
+      border-radius: 8px;
+      font-size: 0.92rem;
+      line-height: 1.8;
+      word-break: break-word;
+    }
+    body.night .description-section {
+      background: #1e2438;
+      border-color: #3e445a;
+    }
+    .description-section:empty {
+      display: none;
+    }
+    .bbcode-mask {
+      background: #1a1e2a;
+      color: transparent;
+      border-radius: 3px;
+      padding: 0 3px;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      user-select: none;
+    }
+    .bbcode-mask:hover, .bbcode-mask.revealed {
+      background: transparent;
+      color: inherit;
+    }
+    body.night .bbcode-mask {
+      background: #e3e3f0;
+      color: transparent;
+    }
+    body.night .bbcode-mask:hover, body.night .bbcode-mask.revealed {
+      background: transparent;
+      color: inherit;
+    }
+    .description-section img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+    }
+    .description-section a {
+      color: #3a6ea5;
+      text-decoration: underline;
+    }
+    body.night .description-section a {
+      color: #6a9bd2;
+    }
   </style>
 </head>
 <body>
@@ -473,6 +524,9 @@
     <!-- 动态内容由js渲染 -->
   </div>
 
+  <!-- 说明区域 -->
+  <div class="description-section" id="descriptionSection"></div>
+
   <!-- 二级菜单开关 (不遮挡练习区) -->
   <div style="margin-top:20px;">
     <div id="restartBtnWrap" style="text-align:right; margin-bottom:4px; display:none;">
@@ -492,13 +546,12 @@
     <div class="setting-item">
       <label>📎 进度导入/导出</label>
       <div class="row-buttons">
-        <button id="exportWithHeaderBtn">导出部分设置</button>
-        <small style="opacity:0.7; white-space:nowrap">导出可在「元素数据」表头中定义的设置项，含元素数据</small>
         <button id="exportProgressBtn">导出进度串</button>
         <button id="importProgressBtn">导入进度</button>
-        <button id="clearProgressBtn" class="danger-btn">清空进度</button>
       </div>
       <textarea id="progressImportExport" placeholder="粘贴进度字符串" rows="2" style="resize:vertical; margin-top:6px; border-radius:8px; padding:8px; width:100%; box-sizing:border-box;"></textarea>
+      <button id="exportWithHeaderBtn">导出部分设置</button>
+      <small style="opacity:0.7; white-space:nowrap">导出可在「元素数据」表头中定义的设置项与元素数据</small>
     </div>
 
     <div class="setting-item">
@@ -513,7 +566,7 @@
     <div class="setting-item full">
       <label>🔤 字体候补</label>
       <div class="inp-row">
-        <input type="text" id="fontFamilyInput" data-default="Unyaa-code-PUA, 'Noto Sans SC','Helvetica Neue',Helvetica,'PingFang SC','Hiragino Sans GB','Microsoft YaHei','微软雅黑',Arial,sans-serif">
+        <input type="text" id="fontFamilyInput" data-default="Chai Sans, 'Noto Sans SC','Helvetica Neue',Helvetica,'PingFang SC','Hiragino Sans GB','Microsoft YaHei','微软雅黑',Arial,sans-serif">
         <button class="reset-val" data-for="fontFamilyInput">↺</button>
       </div>
       <small style="opacity:0.7;">部分名称需使用英文单引号包裹</small>
@@ -597,6 +650,18 @@
 
     </div>
 
+    <div class="settings-section-title">📝 说明</div>
+
+    <div class="setting-item full">
+      <label>练习页说明内容（支持 BBCode）</label>
+      <textarea id="descriptionInput" rows="4" style="resize:vertical; border-radius:8px; padding:8px; width:100%; box-sizing:border-box;" placeholder="输入说明文字，支持 BBCode 语法：[b]粗体[/b] [i]斜体[/i] [u]下划线[/u] [s]删除线[/s] [mask]马赛克[/mask] [color=#ff0000]彩色[/color] [size=18]大小[/size] [url]http://...[/url] [url=http://...]链接文字[/url] [img]http://...[/img]"></textarea>
+      <div class="row-buttons">
+        <button id="resetDescriptionBtn">↺ 重置默认</button>
+        <button id="loadDescriptionExampleBtn">载入BBCode语法示例</button>
+      </div>
+      <small style="opacity:0.7;">也可在元素数据文件表头中使用 #说明: 来配置</small>
+    </div>
+
     <div class="settings-section-title">🎨 元素高亮</div>
     <div class="setting-item full">
       <button id="addHighlightRuleBtn" style="margin-bottom:6px;">+ 添加规则</button>
@@ -621,7 +686,7 @@
       <p>一个轻量、开源的网页端输入方案元素（字根、音节等）重复练习工具，专为输入方案学习者设计。</p>
       <p>本工具由《呜喵码》作者 mono、铁圈、冬山秋木 借助 AI 技术共同构建。</p>
       <p>本工具完全开源免费 <a href="https://github.com/Unyaa-Code/root-practice" target="_blank" rel="noopener">GitHub</a><br>如果它为你带来了便利，欢迎移步 <a href="https://github.com/Unyaa-Code/root-practice#赞助" target="_blank" rel="noopener">README 查看赞助方式</a>，每一份支持都是我们持续更新的动力。</p>
-      <p style="opacity:0.5;">版本：v2026-05-11</p>
+      <p style="opacity:0.5;">版本：v2026-05-22</p>
       </div>
     </div>
   </div>
@@ -652,7 +717,7 @@
     const OLD_FNAME_KEY = 'zigen_memory_filename_v2';
 
     const DEFAULT_SETTINGS = {
-      fontFamily: "Unyaa-code-PUA, 'Noto Sans SC','Helvetica Neue',Helvetica,'PingFang SC','Hiragino Sans GB','Microsoft YaHei','微软雅黑',Arial,sans-serif",
+      fontFamily: "Chai Sans, 'Noto Sans SC','Helvetica Neue',Helvetica,'PingFang SC','Hiragino Sans GB','Microsoft YaHei','微软雅黑',Arial,sans-serif",
       zigenSize: 5.5,
       answerSize: 1.2,
       inputSize: 1.3,
@@ -668,7 +733,8 @@
       fontSizeWhenLarge: 3,
       orderMode: false,
       roundCount: 1,
-      highlightRules: []
+      highlightRules: [],
+      description: '1. 按对会自动跳下一个\n2. 按错会很快重复出现\n3. 五秒内想不起来就按空格'
     };
 
     // ============ IndexedDB 核心 ============
@@ -966,6 +1032,7 @@
     const fontSizeCountThreshold = document.getElementById('fontSizeCountThreshold');
     const fontSizeWhenLarge = document.getElementById('fontSizeWhenLarge');
     const orderModeCheck = document.getElementById('orderModeCheck');
+    const descriptionInput = document.getElementById('descriptionInput');
 
     let settings = { ...DEFAULT_SETTINGS };
 
@@ -1127,6 +1194,44 @@
 
     function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
+    function parseBBCode(text) {
+      if (!text) return '';
+      let html = escHtml(text);
+      html = html.replace(/\[img\](.*?)\[\/img\]/gi, '<img src="$1" alt="图片" loading="lazy">');
+      html = html.replace(/\[url=([^\]]+)\](.*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener">$2</a>');
+      html = html.replace(/\[url\](.*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+      html = html.replace(/\[color=([#0-9a-fA-F]+)\]/gi, '<span style="color:$1">');
+      html = html.replace(/\[\/color\]/gi, '</span>');
+      html = html.replace(/\[size=(\d+)\]/gi, '<span style="font-size:$1px">');
+      html = html.replace(/\[\/size\]/gi, '</span>');
+      html = html.replace(/\[b\]/gi, '<strong>').replace(/\[\/b\]/gi, '</strong>');
+      html = html.replace(/\[i\]/gi, '<em>').replace(/\[\/i\]/gi, '</em>');
+      html = html.replace(/\[u\]/gi, '<u>').replace(/\[\/u\]/gi, '</u>');
+      html = html.replace(/\[s\]/gi, '<del>').replace(/\[\/s\]/gi, '</del>');
+      html = html.replace(/\[mask\]/gi, '<span class="bbcode-mask">').replace(/\[\/mask\]/gi, '</span>');
+      html = html.replace(/\n/g, '<br>');
+      return html;
+    }
+
+    function renderDescription() {
+      const section = document.getElementById('descriptionSection');
+      if (!section) return;
+      const text = settings.description || '';
+      if (!text.trim()) {
+        section.innerHTML = '';
+        return;
+      }
+      section.innerHTML = parseBBCode(text);
+      section.querySelectorAll('.bbcode-mask').forEach(el => {
+        el.addEventListener('click', function(e) {
+          if (window.matchMedia('(hover: none)').matches || 'ontouchstart' in window) {
+            e.preventDefault();
+            this.classList.toggle('revealed');
+          }
+        });
+      });
+    }
+
     function getPureCharCount(name) {
       return (name || '').replace(/-\[.+?\]-/g, '').replace(/\s+/g, '').length;
     }
@@ -1223,6 +1328,7 @@
           if(file) importZip(file);
         });
         document.getElementById('restartBtnWrap').style.display = 'none';
+        renderDescription();
         return;
       }
       if(!currentCard) syncSortAndCard();
@@ -1261,6 +1367,7 @@
       answerInput.addEventListener('input', handleInput);
       document.getElementById('restartBtnWrap').style.display = '';
       if(!isFirst) answerInput.classList.remove('input-error');
+      renderDescription();
     }
 
     function applyStylesToDynamic() {
@@ -1583,6 +1690,8 @@
       let hlRules = null;
       const warnings = [];
       let hasOrderMode = false;
+      let hasDescription = false;
+      const descLines = [];
 
       lines.forEach(l => {
         const m = l.match(/^#\s*(.+?)\s*:\s*(.*)$/);
@@ -1593,6 +1702,10 @@
           settings.orderMode = val === 'true';
         }
         else if (key === '字体候补') settings.fontFamily = val;
+        else if (key === '说明') {
+          hasDescription = true;
+          descLines.push(val);
+        }
         else if (key === '高亮规则') {
           if (!hlRules) hlRules = [];
           const cm = {};
@@ -1608,6 +1721,10 @@
       });
 
       if (!hasOrderMode) settings.orderMode = false;
+      if (hasDescription) {
+        settings.description = descLines.join('\n');
+        descriptionInput.value = settings.description;
+      }
       if (hlRules !== null) settings.highlightRules = hlRules;
       orderModeCheck.checked = settings.orderMode;
       fontFamilyInput.value = settings.fontFamily;
@@ -1635,6 +1752,11 @@
       const lines = [];
       if (settings.orderMode) lines.push('#顺序确认模式: true');
       if (settings.fontFamily !== DEFAULT_SETTINGS.fontFamily) lines.push('#字体候补: ' + settings.fontFamily);
+      if (settings.description && settings.description.trim()) {
+        settings.description.split('\n').forEach(dl => {
+          lines.push('#说明: ' + dl);
+        });
+      }
       settings.highlightRules.forEach(r => {
         const parts = ['浅色=' + r.lightColor, '深色=' + r.darkColor];
         if (r.pattern) parts.push('正则=' + r.pattern);
@@ -1689,6 +1811,7 @@
       fontSizeCountThreshold.value = settings.fontSizeCountThreshold;
       fontSizeWhenLarge.value = settings.fontSizeWhenLarge;
       orderModeCheck.checked = settings.orderMode;
+      descriptionInput.value = settings.description || '';
       if(settings.night) {
         document.body.classList.add('night');
         nightToggle.textContent = '☀️ 日间';
@@ -1713,8 +1836,10 @@
       settings.fontSizeCountThreshold = parseInt(fontSizeCountThreshold.value) || 5;
       settings.fontSizeWhenLarge = parseFloat(fontSizeWhenLarge.value) || 3;
       settings.orderMode = orderModeCheck.checked;
+      settings.description = descriptionInput.value;
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
       applyStylesToDynamic();
+      renderDescription();
       gapValue.textContent = settings.gap + 'px';
       updateRoundCounter();
     }
@@ -1807,7 +1932,7 @@
       document.getElementById('restartBtnTop').addEventListener('click', restartProgress);
 
       [fontFamilyInput, zigenFontSize, answerFontSize, inputFontSize, hintFontSize, commentFontSize, gapSpacing,
-       wrapByCountCheck, wrapCountThreshold, fontSizeByCountCheck, fontSizeCountThreshold, fontSizeWhenLarge].forEach(el =>
+       wrapByCountCheck, wrapCountThreshold, fontSizeByCountCheck, fontSizeCountThreshold, fontSizeWhenLarge, descriptionInput].forEach(el =>
         el.addEventListener('input', saveSettings)
       );
       gapSpacing.addEventListener('input', ()=> gapValue.textContent = gapSpacing.value+'px');
@@ -1826,7 +1951,17 @@
       document.getElementById('exportProgressBtn').addEventListener('click', exportProgress);
       document.getElementById('exportWithHeaderBtn').addEventListener('click', exportWithHeader);
       document.getElementById('importProgressBtn').addEventListener('click', importProgress);
-      document.getElementById('clearProgressBtn').addEventListener('click', restartProgress);
+      document.getElementById('resetDescriptionBtn').addEventListener('click', () => {
+        settings.description = DEFAULT_SETTINGS.description;
+        descriptionInput.value = settings.description;
+        saveSettings();
+      });
+      document.getElementById('loadDescriptionExampleBtn').addEventListener('click', () => {
+        const example = '正常文字\n[b]粗体字[/b]\n[i]斜体字[/i]\n[u]下划线文字[/u]\n[s]删除线文字[/s]\n马赛克：[mask]马赛克文字[/mask]\n[color=#ffa631]彩[/color][color=#a78e44]色[/color][color=#0eb83a]的[/color][color=#3de1ad]哟[/color]。\n[size=10]不同[/size][size=14]大小的[/size][size=18]文字[/size]效果也可实现。\n链接: [url]https://github.com/Unyaa-Code/root-practice[/url]\n带文字说明的网站链接：[url=https://github.com/Unyaa-Code/root-practice]GitHub[/url]\n存放于其他网络服务器的图片：[img]https://github.githubassets.com/favicons/favicon.png[/img]';
+        settings.description = example;
+        descriptionInput.value = example;
+        saveSettings();
+      });
       document.getElementById('resetSettingsBtn').addEventListener('click', ()=>{
         if(confirm('重置字体/字号/间隙？')) {
           settings = { ...DEFAULT_SETTINGS, night: settings.night, firstCode: settings.firstCode, orderMode: settings.orderMode, roundCount: settings.roundCount };
@@ -1843,6 +1978,7 @@
           fontSizeCountThreshold.value = settings.fontSizeCountThreshold;
           fontSizeWhenLarge.value = settings.fontSizeWhenLarge;
           orderModeCheck.checked = settings.orderMode;
+          descriptionInput.value = settings.description || '';
           saveSettings();
         }
       });
@@ -1871,6 +2007,7 @@
         wrapByCountCheck.checked = false;
         fontSizeByCountCheck.checked = false;
         orderModeCheck.checked = false;
+        descriptionInput.value = '';
         fontFamilyInput.value = settings.fontFamily;
         zigenFontSize.value = settings.zigenSize;
         answerFontSize.value = settings.answerSize;
