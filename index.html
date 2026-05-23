@@ -1431,10 +1431,13 @@
       const total = cards.length;
       const mastered = records.filter(r => r[0] > 1).length;
       progressCount = mastered;
+      const indicator = document.querySelector('.progress-indicator');
       if (progressAsPercent && total > 0) {
         progressText.textContent = Math.round(mastered / total * 100) + '%';
+        indicator.title = `${mastered}/${total}`;
       } else {
         progressText.textContent = `${mastered}/${total}`;
+        indicator.title = total > 0 ? Math.round(mastered / total * 100) + '%' : '';
       }
       progressBar.max = total || 1;
       progressBar.value = mastered;
