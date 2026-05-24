@@ -51,16 +51,26 @@
         gap: 6px 8px;
         padding: 6px 10px;
       }
-      .top-bar > button,
-      .top-bar > .top-toggle { order: -1; }
+      .top-bar .file-name {
+        width: 100%;
+        margin-right: 0;
+        font-size: 0.82rem;
+      }
       .progress-indicator {
         font-size: 0.8rem;
+        flex: 1;
+        min-width: 0;
       }
-      progress {
-        width: 80px;
+      .progress-indicator progress {
+        flex: 1;
+        width: auto;
+        min-width: 0;
       }
-      .top-bar .file-name {
-        font-size: 0.82rem;
+      #nightModeToggle {
+        padding: 6px 8px;
+      }
+      .night-toggle-text {
+        display: none;
       }
       #roundCounter {
         font-size: 0.75rem;
@@ -513,10 +523,10 @@
       <span id="progressText">0/0</span>
       <progress id="progressBar" value="0" max="100"></progress>
     </div>
-    <button id="nightModeToggle" title="夜间模式">🌙 夜间</button>
     <label class="top-toggle" style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
       <input type="checkbox" id="firstCodeModeCheck"> 首码模式
     </label>
+    <button id="nightModeToggle" title="夜间模式">🌙 <span class="night-toggle-text">夜间</span></button>
   </div>
 
   <!-- 练习区：无卡片时显示导入按钮，有卡片时显示练习内容 -->
@@ -1826,10 +1836,10 @@
       descriptionInput.value = settings.description || '';
       if(settings.night) {
         document.body.classList.add('night');
-        nightToggle.textContent = '☀️ 日间';
+        nightToggle.innerHTML = '☀️ <span class="night-toggle-text">日间</span>';
       } else {
         document.body.classList.remove('night');
-        nightToggle.textContent = '🌙 夜间';
+        nightToggle.innerHTML = '🌙 <span class="night-toggle-text">夜间</span>';
       }
       updateRoundCounter();
     }
@@ -1917,7 +1927,7 @@
       nightToggle.addEventListener('click', ()=>{
         settings.night = !settings.night;
         document.body.classList.toggle('night', settings.night);
-        nightToggle.textContent = settings.night ? '☀️ 日间' : '🌙 夜间';
+        nightToggle.innerHTML = settings.night ? '☀️ <span class="night-toggle-text">日间</span>' : '🌙 <span class="night-toggle-text">夜间</span>';
         saveSettings();
         if (settings.highlightRules.length && cards.length) renderPracticeArea();
       });
@@ -2019,7 +2029,7 @@
         fileNameSpan.textContent = currentFileName;
         settings = { ...DEFAULT_SETTINGS };
         document.body.classList.remove('night');
-        nightToggle.textContent = '🌙 夜间';
+        nightToggle.innerHTML = '🌙 <span class="night-toggle-text">夜间</span>';
         firstCodeCheck.checked = false;
         wrapByCountCheck.checked = false;
         fontSizeByCountCheck.checked = false;
