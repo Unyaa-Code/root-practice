@@ -1462,11 +1462,6 @@
 
     function syncSortAndCard() {
       if(!cards.length) return;
-      records.sort((a, b) => {
-        if (a[0] === 8 && b[0] !== 8) return 1;
-        if (b[0] === 8 && a[0] !== 8) return -1;
-        return 0;
-      });
       const firstRec = records[0];
       currentCard = cards[firstRec[1]];
       isFirst = (firstRec[0] === -1);
@@ -1511,11 +1506,11 @@
       firstRec[0] = firstRec[0] + 1;
       if(firstRec[0] === 2) progressCount++;
 
-      const moveSteps = [3, 9, 21, 36, 60, 100];
+      const moveSteps = [2, 4, 8, 12, 20, 30, 60, 100];
       const maxIndex = cards.length - 1;
       let step = 0;
       const count = firstRec[0];
-      if(count > moveSteps.length-1) {
+      if(count >= moveSteps.length) {
         firstRec[0] = 8;
         step = maxIndex;
       } else {
