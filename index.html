@@ -567,8 +567,11 @@
     <div class="setting-item">
       <label>🗑️ 清空元素数据</label>
       <div class="row-buttons">
+        <button id="reimportCardsBtn">重新导入元素数据</button>
         <button id="clearCardsBtn" class="danger-btn">清空元素数据</button>
       </div>
+      <input type="file" id="reimportFileInput" accept=".txt,.tsv,.csv,.json,application/json,text/plain" style="display:none;">
+      <small style="opacity:0.7;">重新导入将覆盖元素数据，未变更的元素保留进度，变更的元素重置进度</small>
     </div>
 
     <div class="settings-section-title"> 显示设置</div>
@@ -1611,6 +1614,76 @@
       }
     }
 
+    async function reimportFile(file) {
+      const text = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsText(file);
+      });
+      try {
+        const lines = text.split(/\r?\n/);
+        const headerLines = [];
+        const dataLines = [];
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          if (line.startsWith('#')) { headerLines.push(line); continue; }
+          dataLines.push(line);
+        }
+        parseAndApplyHeader(headerLines);
+
+        const newCards = [];
+        for (let i = 0; i < dataLines.length; i++) {
+          const line = dataLines[i].trim();
+          if (!line) continue;
+          const parts = line.split('\t');
+          if (parts.length < 2 || !parts[0] || !parts[1]) continue;
+          const nameWithComment = parts[0];
+          const commentMatches = [...nameWithComment.matchAll(/-\[(.+?)\]-/g)];
+          const displayName = nameWithComment.replace(/-\[.+?\]-/g, '').replace(/\s+/g, '');
+          newCards.push({
+            name: displayName,
+            key: parts[1],
+            hint: (parts[2] || '').trim(),
+            originalName: nameWithComment,
+            comments: commentMatches.map(m => m[1])
+          });
+        }
+        if(newCards.length === 0) throw new Error('无有效数据行');
+
+        const oldMap = new Map();
+        cards.forEach((c, i) => {
+          oldMap.set(c.name + '\t' + c.key, { card: c, score: records[i] ? records[i][0] : -1 });
+        });
+
+        const newRecords = newCards.map((nc, i) => {
+          const old = oldMap.get(nc.name + '\t' + nc.key);
+          if (old && old.card.hint === nc.hint && old.card.originalName === nc.originalName) {
+            return [old.score, i];
+          }
+          return [-1, i];
+        });
+
+        cards = newCards;
+        records = newRecords;
+        records.sort((a, b) => {
+          if (a[0] === 8 && b[0] !== 8) return 1;
+          if (b[0] === 8 && a[0] !== 8) return -1;
+          return a[0] - b[0];
+        });
+        currentFileName = file.name.replace(/\.[^.]+$/, '');
+        fileNameSpan.textContent = `📄 ${currentFileName}`;
+        syncSortAndCard();
+        progressCount = records.filter(r => r[0] > 1).length;
+        updateProgressUI();
+        await persistAll();
+        renderPracticeArea();
+        renderHighlightRules();
+      } catch(err) {
+        alert('文件解析失败: ' + err.message);
+      }
+    }
+
     async function zipInflate(buf) {
       const ds = new DecompressionStream('deflate-raw');
       const writer = ds.writable.getWriter();
@@ -1970,6 +2043,14 @@
       });
 
       document.getElementById('clearCardsBtn').addEventListener('click', clearCards);
+      document.getElementById('reimportCardsBtn').addEventListener('click', () => {
+        document.getElementById('reimportFileInput').click();
+      });
+      document.getElementById('reimportFileInput').addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (file) await reimportFile(file);
+        e.target.value = '';
+      });
       document.getElementById('exportProgressBtn').addEventListener('click', exportProgress);
       document.getElementById('exportWithHeaderBtn').addEventListener('click', exportWithHeader);
       document.getElementById('importProgressBtn').addEventListener('click', importProgress);
